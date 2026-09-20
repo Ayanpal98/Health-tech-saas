@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Healytics AI Health Platform & HealthSync SaaS</title>
+    <meta name="description" content="HealthSync is a real-time, location-aware healthcare SaaS that matches patients with verified providers and local pharmacies in minutes.">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for professional icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F8F9FC;
+            color: #1e293b;
+            font-family: 'Inter', sans-serif;
+        }
+        /* Keep anchored sections clear of the sticky header */
+        section[id] { scroll-margin-top: 5rem; }
+
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .hero-curve {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.03); }
+        }
+        .animate-pulse-glow {
+            animation: pulseGlow 4s infinite ease-in-out;
+        }
+
+        /* Keyboard focus */
+        a:focus-visible, button:focus-visible, summary:focus-visible,
+        input:focus-visible, select:focus-visible, textarea:focus-visible {
+            outline: 2px solid #e11d48;
+            outline-offset: 2px;
+        }
+
+        /* FAQ accordion */
+        details > summary { list-style: none; cursor: pointer; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] .faq-chevron { transform: rotate(180deg); }
+        .faq-chevron { transition: transform 0.2s ease; }
+
+        /* Pricing toggle */
+        .billing-btn[aria-pressed="true"] {
+            background-color: #0f172a;
+            color: #ffffff;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto !important; }
+            .animate-pulse-glow, .animate-ping, .animate-pulse, .animate-bounce { animation: none !important; }
+            * { transition-duration: 0.01ms !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-rose-500 selection:text-white">
+
+    <header class="sticky top-0 z-50 glass-card border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <a href="#top" class="flex items-center space-x-3">
+                <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-rose-600 to-rose-400 flex items-center justify-center text-white shadow-lg shadow-rose-500/25">
+                    <i class="fa-solid fa-heart-pulse text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-rose-900 bg-clip-text text-transparent">Healytics <span class="text-rose-600 font-normal">HealthSync</span></span>
+                    <p class="hidden sm:block text-xs text-slate-500 font-medium">Precision-Matched Real-Time Healthcare SaaS</p>
+                </div>
+            </a>
+            <nav class="hidden lg:flex items-center space-x-7 text-sm font-semibold text-slate-600" aria-label="Primary">
+                <a href="#features" class="hover:text-rose-600 transition">Features</a>
+                <a href="#portals" class="hover:text-rose-600 transition">Portals</a>
+                <a href="#geo" class="hover:text-rose-600 transition">Geo-Intelligence</a>
+                <a href="#simulation" class="hover:text-rose-600 transition">Live Simulator</a>
+                <a href="#pricing" class="hover:text-rose-600 transition">Pricing</a>
+                <a href="#faq" class="hover:text-rose-600 transition">FAQ</a>
+            </nav>
+            <div class="flex items-center space-x-3">
+                <a href="#simulation" class="hidden sm:inline-flex px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition">
+                    Try the simulator
+                </a>
+                <a href="#cta" class="px-5 py-2.5 rounded-xl bg-rose-600 text-white font-semibold text-sm shadow-lg shadow-rose-600/20 hover:bg-rose-700 transition transform hover:-translate-y-0.5">
+                    Get early access
+                </a>
+                <button id="menu-btn" class="lg:hidden w-11 h-11 rounded-xl border border-slate-200 bg-white text-slate-700 flex items-center justify-center" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden lg:hidden border-t border-slate-200 bg-white/95">
+            <nav class="max-w-7xl mx-auto px-4 sm:px-6 py-4 grid gap-1 text-sm font-semibold text-slate-700" aria-label="Mobile">
+                <a href="#features" class="px-3 py-3 rounded-xl hover:bg-slate-50">Features</a>
+                <a href="#portals" class="px-3 py-3 rounded-xl hover:bg-slate-50">Portals</a>
+                <a href="#geo" class="px-3 py-3 rounded-xl hover:bg-slate-50">Geo-Intelligence</a>
+                <a href="#simulation" class="px-3 py-3 rounded-xl hover:bg-slate-50">Live Simulator</a>
+                <a href="#pricing" class="px-3 py-3 rounded-xl hover:bg-slate-50">Pricing</a>
+                <a href="#faq" class="px-3 py-3 rounded-xl hover:bg-slate-50">FAQ</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="top">
+
+    <section class="relative overflow-hidden pt-12 pb-24 lg:pt-20 lg:pb-32">
+        <div class="hero-curve">
+            <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-rose-100/60 blur-3xl animate-pulse-glow"></div>
+            <div class="absolute top-1/2 -left-24 w-80 h-80 rounded-full bg-indigo-100/50 blur-3xl"></div>
+            <!-- Neural wireframe SVG silhouette background -->
+            <svg class="absolute right-0 top-1/4 opacity-15 w-full max-w-2xl h-auto pointer-events-none" viewBox="0 0 600 600" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <circle cx="300" cy="300" r="250" stroke="#f43f5e" stroke-width="1.5" stroke-dasharray="8 8"/>
+                <circle cx="300" cy="300" r="180" stroke="#4f46e5" stroke-width="1"/>
+                <path d="M100 300H500M300 100V500" stroke="#94a3b8" stroke-width="1"/>
+                <circle cx="300" cy="300" r="80" fill="url(#paint0_linear)" fill-opacity="0.2"/>
+                <defs>
+                    <linearGradient id="paint0_linear" x1="220" y1="220" x2="380" y2="380" gradientUnits="userSpaceOnUse">
+                        <stop stop-color="#f43f5e"/>
+                        <stop offset="1" stop-color="#4f46e5"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold tracking-wide uppercase">
+                        <i class="fa-solid fa-satellite-dish"></i>
+                        <span>Next-Gen Healthcare Infrastructure</span>
+                    </div>
+                    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
+                        Replacing Fragmented Loops with <span class="bg-gradient-to-r from-rose-600 to-indigo-600 bg-clip-text text-transparent">Precision Care</span>.
+                    </h1>
+                    <p class="text-lg text-slate-600 max-w-2xl">
+                        HealthSync is a unified, real-time, and location-aware healthcare SaaS infrastructure engineered to instantly match patient care requirements with verified medical providers and local pharmacies.
+                    </p>
+                    <div class="flex flex-wrap gap-4 pt-4">
+                        <a href="#cta" class="px-7 py-3.5 rounded-xl bg-rose-600 text-white font-semibold shadow-xl shadow-rose-600/25 hover:bg-rose-700 transition flex items-center space-x-3">
+                            <span>Request early access</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </a>
+                        <a href="#simulation" class="px-7 py-3.5 rounded-xl bg-white border border-slate-200 text-slate-700 font-semibold shadow-sm hover:bg-slate-50 transition flex items-center space-x-3">
+                            <i class="fa-solid fa-play text-rose-600 text-xs"></i>
+                            <span>Explore interactive portals</span>
+                        </a>
+                    </div>
+                    <p class="text-xs text-slate-500 font-medium">Free pilot for your first location. No card required.</p>
+                    <!-- Quick stats row -->
+                    <div class="grid grid-cols-3 gap-6 pt-8 border-t border-slate-200/80">
+                        <div>
+                            <div class="text-2xl font-bold text-slate-900">&lt; 3 Min</div>
+                            <div class="text-xs text-slate-500 font-medium">Avg. Match Time</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-rose-600">100%</div>
+                            <div class="text-xs text-slate-500 font-medium">Geo-Verified Providers</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold text-indigo-600">Real-Time</div>
+                            <div class="text-xs text-slate-500 font-medium">Triage & Routing</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating glass cards column -->
+                <div class="lg:col-span-5 relative">
+                    <div class="space-y-4">
+                        <!-- Floating Recovery Waveform Card -->
+                        <div class="glass-card p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200/80 transform hover:-translate-y-1 transition duration-300">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center text-rose-600">
+                                        <i class="fa-solid fa-wave-square"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 text-sm">Live Recovery Waveform</h4>
+                                        <p class="text-xs text-slate-500">Patient Telemetry Stream</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold">Stable</span>
+                            </div>
+                            <!-- Mock ECG canvas/waveform bars -->
+                            <div class="h-16 flex items-end justify-between space-x-1 px-2 bg-slate-50 rounded-2xl py-2" aria-hidden="true">
+                                <div class="w-1.5 bg-rose-400 h-4 rounded-full"></div>
+                                <div class="w-1.5 bg-rose-500 h-8 rounded-full"></div>
+                                <div class="w-1.5 bg-rose-600 h-12 rounded-full"></div>
+                                <div class="w-1.5 bg-rose-500 h-6 rounded-full"></div>
+                                <div class="w-1.5 bg-indigo-500 h-14 rounded-full"></div>
+                                <div class="w-1.5 bg-indigo-600 h-10 rounded-full"></div>
+                                <div class="w-1.5 bg-rose-400 h-5 rounded-full"></div>
+                                <div class="w-1.5 bg-rose-500 h-9 rounded-full"></div>
+                                <div class="w-1.5 bg-rose-600 h-14 rounded-full"></div>
+                                <div class="w-1.5 bg-indigo-500 h-8 rounded-full"></div>
+                                <div class="w-1.5 bg-indigo-600 h-4 rounded-full"></div>
+                            </div>
+                        </div>
+
+                        <!-- Floating Health Score Card -->
+                        <div class="glass-card p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200/80 transform hover:-translate-y-1 transition duration-300 flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 text-lg font-extrabold">
+                                    98%
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 text-sm">Ecosystem Match Index</h4>
+                                    <p class="text-xs text-slate-500">Precision GPS & Skill Alignment</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">+4.2% optimized</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ NEW: WHO IT'S FOR ============ -->
+    <section aria-label="Who HealthSync is built for" class="py-10 bg-white border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-sm font-semibold text-slate-500 mb-6">Built for the organisations that run care on the ground</p>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold">
+                    <i class="fa-solid fa-house-medical text-rose-600"></i> Clinics
+                </div>
+                <div class="flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold">
+                    <i class="fa-solid fa-hospital text-indigo-600"></i> Hospitals
+                </div>
+                <div class="flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold">
+                    <i class="fa-solid fa-video text-rose-600"></i> Telehealth teams
+                </div>
+                <div class="flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold">
+                    <i class="fa-solid fa-pills text-emerald-600"></i> Pharmacy networks
+                </div>
+                <div class="col-span-2 md:col-span-1 flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold">
+                    <i class="fa-solid fa-map-location-dot text-amber-600"></i> District health programs
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ NEW: FEATURES (BENTO) ============ -->
+    <section id="features" class="py-20 bg-[#F8F9FC] border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-14">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full">Features</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">Everything care coordination needs, in one place</h2>
+                <p class="text-slate-600 mt-4 text-base">
+                    Patients get answers faster. Providers spend time on care instead of phone tag. Administrators see the whole network.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-5">
+                <!-- Large feature -->
+                <div class="md:col-span-4 p-8 rounded-3xl bg-slate-900 text-white shadow-xl relative overflow-hidden">
+                    <div class="absolute -right-16 -bottom-16 w-64 h-64 rounded-full bg-rose-500/20 blur-3xl" aria-hidden="true"></div>
+                    <div class="relative">
+                        <div class="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-xl mb-6">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-2">Match patients to the right provider in minutes</h3>
+                        <p class="text-slate-300 text-sm leading-relaxed max-w-xl">
+                            A patient describes what they need. HealthSync checks specialty, availability, and distance, then connects them to the best-fit verified provider. No call queues, no waiting lists.
+                        </p>
+                        <div class="mt-6 flex flex-wrap gap-2 text-xs font-semibold">
+                            <span class="px-3 py-1.5 rounded-full bg-white/10 border border-white/10">Specialty matching</span>
+                            <span class="px-3 py-1.5 rounded-full bg-white/10 border border-white/10">Live availability</span>
+                            <span class="px-3 py-1.5 rounded-full bg-white/10 border border-white/10">Distance ranking</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 p-8 rounded-3xl bg-white border border-slate-200 shadow-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-5">
+                        <i class="fa-solid fa-location-crosshairs"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Service areas that make sense</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Providers and pharmacies define where they work. Requests only reach people who can actually help.
+                    </p>
+                </div>
+
+                <div class="md:col-span-2 p-8 rounded-3xl bg-white border border-slate-200 shadow-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl mb-5">
+                        <i class="fa-solid fa-prescription-bottle-medical"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Prescriptions to nearby pharmacies</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        After a consultation, the prescription goes to a local pharmacy for fulfilment, with no separate search.
+                    </p>
+                </div>
+
+                <div class="md:col-span-2 p-8 rounded-3xl bg-white border border-slate-200 shadow-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl mb-5">
+                        <i class="fa-solid fa-id-badge"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Verified providers only</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Every consultant and pharmacy is checked before joining, and verification status is visible to patients.
+                    </p>
+                </div>
+
+                <div class="md:col-span-2 p-8 rounded-3xl bg-white border border-slate-200 shadow-sm">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl mb-5">
+                        <i class="fa-solid fa-chart-column"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Network analytics</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Track response times, coverage gaps, and demand by area from one admin dashboard.
+                    </p>
+                </div>
+
+                <div class="md:col-span-3 p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex gap-5">
+                    <div class="shrink-0 w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-lock"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">Consent and access control built in</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            Patients choose what to share. Role-based access and a full audit trail show who viewed what, and when.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="md:col-span-3 p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex gap-5">
+                    <div class="shrink-0 w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-user-doctor"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">AI that assists, clinicians decide</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            AI sorts requests, suggests matches, and sends notifications. Diagnosis and treatment stay with medical professionals.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ NEW: HOW IT WORKS ============ -->
+    <section id="how-it-works" class="py-20 bg-white border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-14">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">How it works</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">From request to care in three steps</h2>
+            </div>
+
+            <ol class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+                <li class="relative p-8 rounded-3xl bg-slate-50 border border-slate-200">
+                    <div class="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center font-extrabold mb-5">1</div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Patient sends a request</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        They pick the specialty they need, add a short note, and set how far they can travel. Location is shared only for matching.
+                    </p>
+                </li>
+                <li class="relative p-8 rounded-3xl bg-slate-50 border border-slate-200">
+                    <div class="w-10 h-10 rounded-full bg-rose-600 text-white flex items-center justify-center font-extrabold mb-5">2</div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">HealthSync finds the best match</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        The geo-intelligence layer ranks available verified providers by specialty, service area, and distance, then notifies the top match.
+                    </p>
+                </li>
+                <li class="relative p-8 rounded-3xl bg-slate-50 border border-slate-200">
+                    <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-extrabold mb-5">3</div>
+                    <h3 class="text-lg font-bold text-slate-900 mb-2">Provider connects and follows up</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        The consultant accepts, consults, and sends any prescription to a nearby pharmacy. The patient tracks it all in one place.
+                    </p>
+                </li>
+            </ol>
+
+            <div class="text-center mt-10">
+                <a href="#simulation" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 text-white font-semibold text-sm shadow-lg hover:bg-slate-800 transition">
+                    <span>See it run in the simulator</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="overview" class="py-20 bg-[#F8F9FC] border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full">Platform Overview</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">HealthSync Infrastructure</h2>
+                <p class="text-slate-600 mt-4 text-base">
+                    A unified, real-time, and location-aware healthcare SaaS infrastructure designed to replace fragmented booking loops with need-driven, precision-matched care connections.
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-8 rounded-3xl bg-white border border-slate-200 hover:shadow-lg transition">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-xl mb-6 shadow-md shadow-rose-600/30">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Real-Time SaaS Infrastructure</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Eliminates traditional phone call queues and waiting lists. Patients broadcast needs and instantly connect with available providers matching their exact medical specialty and geographical radius.
+                    </p>
+                </div>
+                <div class="p-8 rounded-3xl bg-white border border-slate-200 hover:shadow-lg transition">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl mb-6 shadow-md shadow-indigo-600/30">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Location-Aware Precision</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Built upon a geo-first architecture that automatically computes distance matrices between patients, consultants, and local pharmacies for rapid deployment of medical resources.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="portals" class="py-20 bg-white border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Multi-Portal Architecture</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">Core Ecosystem & Portals</h2>
+                <p class="text-slate-600 mt-4 text-base">
+                    Tailored specialized workspaces empowering every stakeholder in the healthcare continuum.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Patient Portal -->
+                <div class="glass-card p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-lg mb-4">
+                            <i class="fa-solid fa-hospital-user"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">For Patients</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Instant care broadcasting, location-aware provider discovery, real-time request updates, digital profiles, and secure follow-up tracking.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-rose-600">
+                        <span>Patient Portal Active</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    </div>
+                </div>
+
+                <!-- Medical Consultants -->
+                <div class="glass-card p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg mb-4">
+                            <i class="fa-solid fa-user-doctor"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">For Consultants</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Verified professional profiles, defined service areas, and a unified workspace to manage incoming patient triage and consultations.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-indigo-600">
+                        <span>Consultant Suite Active</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    </div>
+                </div>
+
+                <!-- Pharmacies -->
+                <div class="glass-card p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg mb-4">
+                            <i class="fa-solid fa-pills"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">For Pharmacies</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Digital network registration, local operational geography management, and direct fulfillment workflows supporting patients locally.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-600">
+                        <span>Pharmacy Hub Active</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    </div>
+                </div>
+
+                <!-- Administrators -->
+                <div class="glass-card p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                    <div>
+                        <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg mb-4">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-2">For Administrators</h3>
+                        <p class="text-slate-600 text-xs leading-relaxed">
+                            Command centre monitoring capabilities, network scalability, user management, and operational analytics.
+                        </p>
+                    </div>
+                    <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-amber-600">
+                        <span>Command Center Active</span>
+                        <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="geo" class="py-20 bg-[#F8F9FC] border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full">Spatial Intelligence</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">The Geo-Intelligence Layer</h2>
+                <p class="text-slate-600 mt-4 text-base">
+                    Automated routing sequence mapping healthcare access with pinpoint geographic precision.
+                </p>
+            </div>
+
+            <!-- Formula Display Card -->
+            <div class="p-8 rounded-3xl bg-slate-900 text-white shadow-xl mb-12 overflow-x-auto text-center">
+                <p class="text-xs text-rose-400 font-bold uppercase tracking-widest mb-3">Automated Routing Sequence</p>
+                <div class="text-lg sm:text-2xl font-mono text-slate-100 whitespace-nowrap py-2">
+                    Patient Location <span class="text-rose-500">→</span> Healthcare Requirement <span class="text-rose-500">→</span> Provider Availability <span class="text-rose-500">→</span> Service Area <span class="text-rose-500">→</span> Distance & Relevance <span class="text-rose-500">→</span> Real-Time Connection
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-8 rounded-3xl bg-white border border-slate-200">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-globe"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900">Geo-First Scalability</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Designed to support healthcare networks scaling seamlessly from local neighborhoods and towns to cities, districts, states, and multi-state regions with zero latency overhead.
+                    </p>
+                </div>
+                <div class="p-8 rounded-3xl bg-white border border-slate-200">
+                    <div class="flex items-center space-x-3 mb-4">
+                        <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-route"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900">Haversine GPS Routing</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Utilizes precise Haversine distance calculations combined with live traffic and consultant availability vectors to compute the optimal matching node in real-time.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="workflow" class="py-20 bg-white border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Evolutionary Leap</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">Workflow Evolution</h2>
+                <p class="text-slate-600 mt-4 text-base">
+                    Contrasting the friction of traditional booking loops with the speed of connected healthcare journeys.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Traditional Journey -->
+                <div class="p-8 rounded-3xl bg-slate-50 border border-slate-200 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-slate-900">Traditional Healthcare Journey</h3>
+                        <span class="px-3 py-1 rounded-full bg-rose-50 text-rose-600 text-xs font-bold">High Friction</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-600">
+                        <span class="px-3 py-2 rounded-xl bg-white border border-slate-200">Search</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
+                        <span class="px-3 py-2 rounded-xl bg-white border border-slate-200">Call</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
+                        <span class="px-3 py-2 rounded-xl bg-white border border-slate-200">Wait</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
+                        <span class="px-3 py-2 rounded-xl bg-white border border-slate-200">Book</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
+                        <span class="px-3 py-2 rounded-xl bg-white border border-slate-200">Travel</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
+                        <span class="px-3 py-2 rounded-xl bg-white border border-slate-200">Consult</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-400"></i>
+                        <span class="px-3 py-2 rounded-xl bg-white border border-slate-200">Search Pharmacy</span>
+                    </div>
+                </div>
+
+                <!-- Connected Journey -->
+                <div class="p-8 rounded-3xl bg-slate-900 text-white shadow-xl">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-lg font-bold text-white">Connected Healthcare Journey</h3>
+                        <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold">HealthSync Streamlined</span>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 text-sm font-medium text-slate-300">
+                        <span class="px-3 py-2 rounded-xl bg-slate-800 text-rose-400 font-bold">Need</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-500"></i>
+                        <span class="px-3 py-2 rounded-xl bg-slate-800 text-rose-400 font-bold">Request</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-500"></i>
+                        <span class="px-3 py-2 rounded-xl bg-slate-800 text-rose-400 font-bold">Match</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-500"></i>
+                        <span class="px-3 py-2 rounded-xl bg-slate-800 text-rose-400 font-bold">Connect</span>
+                        <i class="fa-solid fa-arrow-right text-xs text-slate-500"></i>
+                        <span class="px-3 py-2 rounded-xl bg-slate-800 text-emerald-400 font-bold">Receive Support</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="ai-trust" class="py-20 bg-[#F8F9FC] border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full">Secure Intelligence</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">AI & Trust Architecture</h2>
+                <p class="text-slate-600 mt-4 text-base">
+                    Ensuring uncompromising security, patient consent, and assisted human-centered workflows.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="p-8 rounded-3xl bg-white border border-slate-200">
+                    <div class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-xl mb-6 shadow-md shadow-indigo-600/30">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Assisted Workflows (Non-Replacement)</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        AI handles request categorization, provider matching, routing, intelligent notifications, and automated workflows while keeping human medical expertise securely at the center of all diagnosis and treatment.
+                    </p>
+                </div>
+                <div class="p-8 rounded-3xl bg-white border border-slate-200">
+                    <div class="w-12 h-12 rounded-2xl bg-rose-600 text-white flex items-center justify-center text-xl mb-6 shadow-md shadow-rose-600/30">
+                        <i class="fa-solid fa-shield-cat"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-2">Security & Compliance</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Built on an uncompromised foundation of privacy, HIPAA-ready security, patient consent management, rigorous provider verification, role-based access control, and full auditability.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="simulation" class="py-20 bg-white border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-16">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full">Interactive SaaS Simulator</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">HealthSync Portal Simulator</h2>
+                <p class="text-slate-600 mt-4 text-base">
+                    Test live geo-routing, patient broadcasting, consultant triage, and pharmacy fulfillment in real-time.
+                </p>
+            </div>
+
+            <!-- Portal Tabs -->
+            <div class="flex flex-wrap justify-center gap-3 mb-10">
+                <button onclick="switchPortal('patient')" id="tab-patient" class="portal-tab px-6 py-3 rounded-xl font-bold text-sm bg-slate-900 text-white shadow-md transition">
+                    <i class="fa-solid fa-hospital-user mr-2"></i> Patient Care Request
+                </button>
+                <button onclick="switchPortal('consultant')" id="tab-consultant" class="portal-tab px-6 py-3 rounded-xl font-bold text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-user-doctor mr-2"></i> Consultant Triage
+                </button>
+                <button onclick="switchPortal('pharmacy')" id="tab-pharmacy" class="portal-tab px-6 py-3 rounded-xl font-bold text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-pills mr-2"></i> Pharmacy Fulfillment
+                </button>
+                <button onclick="switchPortal('admin')" id="tab-admin" class="portal-tab px-6 py-3 rounded-xl font-bold text-sm bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 transition">
+                    <i class="fa-solid fa-chart-line mr-2"></i> Admin Command Center
+                </button>
+            </div>
+
+            <!-- Portal Container -->
+            <div class="glass-card p-6 sm:p-10 rounded-3xl shadow-xl border border-slate-200">
+                
+                <!-- PATIENT PORTAL -->
+                <div id="portal-patient" class="portal-view space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-200">
+                        <div>
+                            <h3 class="text-xl font-extrabold text-slate-900">Patient Care Broadcasting</h3>
+                            <p class="text-xs text-slate-500">Instantly broadcast medical needs to verified nearby providers and pharmacies.</p>
+                        </div>
+                        <span class="mt-2 sm:mt-0 px-3 py-1 bg-rose-50 text-rose-600 text-xs font-bold rounded-full">GPS Active: 25.5788° N, 91.8933° E</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="patient-specialty" class="block text-xs font-bold text-slate-700 uppercase mb-1">Select Medical Specialty / Requirement</label>
+                                <select id="patient-specialty" class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                    <option value="General Consultation">General Consultation & Triage</option>
+                                    <option value="Cardiology Specialist">Cardiology Specialist</option>
+                                    <option value="Pediatric Urgent Care">Pediatric Urgent Care</option>
+                                    <option value="Orthopedic Evaluation">Orthopedic Evaluation</option>
+                                    <option value="Prescription Refill & Delivery">Prescription Refill & Local Delivery</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="patient-notes" class="block text-xs font-bold text-slate-700 uppercase mb-1">Symptoms or Urgency Notes</label>
+                                <textarea id="patient-notes" rows="3" class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500" placeholder="Briefly describe symptoms (e.g. mild chest discomfort, routine checkup)...">Routine checkup and prescription renewal.</textarea>
+                            </div>
+                            <div>
+                                <label for="radius-range" class="block text-xs font-bold text-slate-700 uppercase mb-1">Search Radius (Kilometers)</label>
+                                <input type="range" min="1" max="50" value="10" class="w-full accent-rose-600" id="radius-range" oninput="document.getElementById('radius-val').innerText = this.value + ' km'">
+                                <div class="text-right text-xs font-bold text-slate-500 mt-1" id="radius-val">10 km</div>
+                            </div>
+                            <button onclick="broadcastCareRequest()" class="w-full py-3.5 rounded-xl bg-rose-600 text-white font-bold text-sm shadow-lg shadow-rose-600/30 hover:bg-rose-700 transition">
+                                <i class="fa-solid fa-satellite-dish mr-2"></i> Broadcast Care Request Now
+                            </button>
+                        </div>
+
+                        <!-- Live Match Feed Simulation -->
+                        <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center justify-between mb-4">
+                                    <h4 class="font-bold text-slate-900 text-sm">Geo-Matched Provider Feed</h4>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                                </div>
+                                <div id="match-results" class="space-y-3" aria-live="polite">
+                                    <div class="p-4 rounded-xl bg-white border border-slate-200 flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold">
+                                                <i class="fa-solid fa-user-doctor"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-slate-900 text-sm">Dr. A. Sharma, MD</div>
+                                                <div class="text-xs text-slate-500">General & Internal Med • 1.4 km away</div>
+                                            </div>
+                                        </div>
+                                        <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold">Available Now</span>
+                                    </div>
+                                    <div class="p-4 rounded-xl bg-white border border-slate-200 flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                                                <i class="fa-solid fa-pills"></i>
+                                            </div>
+                                            <div>
+                                                <div class="font-bold text-slate-900 text-sm">Central Health Pharmacy</div>
+                                                <div class="text-xs text-slate-500">Direct Fulfillment • 2.1 km away</div>
+                                            </div>
+                                        </div>
+                                        <span class="px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600 text-xs font-bold">In Stock</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-xs text-slate-400 text-center mt-4">
+                                Haversine GPS distance ranking computed in real-time.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONSULTANT PORTAL -->
+                <div id="portal-consultant" class="portal-view hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-200">
+                        <div>
+                            <h3 class="text-xl font-extrabold text-slate-900">Medical Consultant Workspace</h3>
+                            <p class="text-xs text-slate-500">Manage incoming patient triage, geo-service areas, and secure consultations.</p>
+                        </div>
+                        <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+                            <span class="px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full">Status: Online & Triage Ready</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                            <div class="text-xs font-bold text-slate-400 uppercase">Incoming Triage Queue</div>
+                            <div class="text-2xl font-extrabold text-slate-900 mt-1">4 Requests</div>
+                            <div class="text-xs text-emerald-600 font-medium mt-1">Avg response: 1.2 mins</div>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                            <div class="text-xs font-bold text-slate-400 uppercase">Service Radius</div>
+                            <div class="text-2xl font-extrabold text-slate-900 mt-1">15.0 km</div>
+                            <div class="text-xs text-indigo-600 font-medium mt-1">District Zone Active</div>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                            <div class="text-xs font-bold text-slate-400 uppercase">Verification Level</div>
+                            <div class="text-2xl font-extrabold text-emerald-600 mt-1">Verified Tier-1</div>
+                            <div class="text-xs text-slate-500 font-medium mt-1">License #MED-88921</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-200">
+                        <h4 class="font-bold text-slate-900 text-sm mb-4">Active Patient Triage Stream</h4>
+                        <div class="space-y-3">
+                            <div class="p-4 rounded-xl bg-white border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                                <div>
+                                    <div class="font-bold text-slate-900 text-sm">Patient ID: #9942 (General Consultation)</div>
+                                    <div class="text-xs text-slate-500">Distance: 1.4 km • Notes: Routine checkup and prescription renewal.</div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="alertConsultantAction('Accepted & Secure Video Link Generated')" class="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition">Accept & Connect</button>
+                                    <button onclick="alertConsultantAction('Re-routed to Nearest Triage Unit')" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-300 transition">Re-route</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PHARMACY PORTAL -->
+                <div id="portal-pharmacy" class="portal-view hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-200">
+                        <div>
+                            <h3 class="text-xl font-extrabold text-slate-900">Pharmacy Digital Network Hub</h3>
+                            <p class="text-xs text-slate-500">Manage local operational geography and direct prescription fulfillment workflows.</p>
+                        </div>
+                        <span class="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-full">Network ID: PH-7782</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-4">
+                            <h4 class="font-bold text-slate-900 text-sm">Operational Geography Settings</h4>
+                            <div>
+                                <label for="pharmacy-radius" class="block text-xs font-bold text-slate-700 uppercase mb-1">Fulfillment Delivery Radius</label>
+                                <input id="pharmacy-radius" type="text" value="8.5 km radius" class="w-full px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm font-medium" readonly>
+                            </div>
+                            <div>
+                                <span class="block text-xs font-bold text-slate-700 uppercase mb-1">Inventory Sync Status</span>
+                                <div class="flex items-center space-x-2 text-emerald-600 font-bold text-sm">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                    <span>All Essential Medicines In-Stock (99.4%)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200 flex flex-col justify-between">
+                            <div>
+                                <h4 class="font-bold text-slate-900 text-sm mb-4">Pending Local Prescriptions</h4>
+                                <div class="p-4 rounded-xl bg-white border border-slate-200 flex items-center justify-between">
+                                    <div>
+                                        <div class="font-bold text-slate-900 text-sm">Prescription #RX-3011</div>
+                                        <div class="text-xs text-slate-500">Requested by Dr. A. Sharma • 1.2 km away</div>
+                                    </div>
+                                    <button onclick="alertConsultantAction('Prescription fulfillment dispatched locally!')" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition">Fulfill Order</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ADMIN PORTAL -->
+                <div id="portal-admin" class="portal-view hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-200">
+                        <div>
+                            <h3 class="text-xl font-extrabold text-slate-900">Admin Command Center</h3>
+                            <p class="text-xs text-slate-500">Command center monitoring capabilities, network scalability, and operational analytics.</p>
+                        </div>
+                        <span class="px-3 py-1 bg-amber-50 text-amber-600 text-xs font-bold rounded-full">System Health: Optimal</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                            <div class="text-xs font-bold text-slate-400 uppercase">Active Patients</div>
+                            <div class="text-2xl font-extrabold text-slate-900 mt-1">1,428</div>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                            <div class="text-xs font-bold text-slate-400 uppercase">Verified Consultants</div>
+                            <div class="text-2xl font-extrabold text-rose-600 mt-1">342</div>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                            <div class="text-xs font-bold text-slate-400 uppercase">Partner Pharmacies</div>
+                            <div class="text-2xl font-extrabold text-indigo-600 mt-1">89</div>
+                        </div>
+                        <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                            <div class="text-xs font-bold text-slate-400 uppercase">Network Scalability</div>
+                            <div class="text-2xl font-extrabold text-emerald-600 mt-1">Multi-State</div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 rounded-2xl bg-slate-50 border border-slate-200">
+                        <h4 class="font-bold text-slate-900 text-sm mb-4">Command Center Log & Audit Trail</h4>
+                        <div class="space-y-2 text-xs font-mono text-slate-600">
+                            <div class="p-2.5 rounded bg-white border border-slate-200 flex justify-between">
+                                <span>[INFO] Geo-routing node synchronized successfully across district zones.</span>
+                                <span class="text-slate-400">Just now</span>
+                            </div>
+                            <div class="p-2.5 rounded bg-white border border-slate-200 flex justify-between">
+                                <span>[SECURITY] Role-based access validation passed for administrator session.</span>
+                                <span class="text-slate-400">2 mins ago</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <p class="text-center text-xs text-slate-400 mt-4">The simulator uses sample data to show how matching and routing work.</p>
+        </div>
+    </section>
+
+    <!-- ============ NEW: PRICING ============ -->
+    <!-- NOTE: Prices below are sample figures. Edit the data-monthly / data-annual attributes to change them. -->
+    <section id="pricing" class="py-20 bg-[#F8F9FC] border-t border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-3xl mx-auto text-center mb-10">
+                <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">Pricing</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">Start with one location, grow to a network</h2>
+                <p class="text-slate-600 mt-4 text-base">
+                    Every plan includes a free pilot. Pay only when you go live.
+                </p>
+            </div>
+
+            <!-- Billing toggle -->
+            <div class="flex justify-center mb-12">
+                <div class="inline-flex items-center p-1 rounded-xl bg-white border border-slate-200 shadow-sm" role="group" aria-label="Billing period">
+                    <button type="button" class="billing-btn px-5 py-2 rounded-lg text-sm font-bold text-slate-600 transition" data-period="monthly" aria-pressed="true">Monthly</button>
+                    <button type="button" class="billing-btn px-5 py-2 rounded-lg text-sm font-bold text-slate-600 transition" data-period="annual" aria-pressed="false">
+                        Annual <span class="ml-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full billing-save">Save 20%</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+                <!-- Clinic -->
+                <div class="p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-lg font-bold text-slate-900">Clinic</h3>
+                    <p class="text-sm text-slate-500 mt-1">For a single clinic or small practice.</p>
+                    <div class="mt-6 flex items-end gap-1">
+                        <span class="text-4xl font-extrabold text-slate-900 price" data-monthly="₹4,999" data-annual="₹3,999">₹4,999</span>
+                        <span class="text-sm text-slate-500 pb-1">/ month</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1 billing-note">Billed monthly</p>
+                    <a href="#cta" class="mt-6 block text-center py-3 rounded-xl bg-white border border-slate-300 text-slate-800 font-bold text-sm hover:bg-slate-50 transition">Start free pilot</a>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600">
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Up to 10 consultants</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Patient and consultant portals</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Geo-matching within one district</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Consent management and audit trail</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Email support</li>
+                    </ul>
+                </div>
+
+                <!-- Network (featured) -->
+                <div class="p-8 rounded-3xl bg-slate-900 text-white shadow-2xl shadow-slate-900/20 flex flex-col relative">
+                    <span class="absolute -top-3 left-8 px-3 py-1 rounded-full bg-rose-600 text-white text-xs font-bold">Most popular</span>
+                    <h3 class="text-lg font-bold">Network</h3>
+                    <p class="text-sm text-slate-400 mt-1">For hospital groups and multi-branch providers.</p>
+                    <div class="mt-6 flex items-end gap-1">
+                        <span class="text-4xl font-extrabold price" data-monthly="₹19,999" data-annual="₹15,999">₹19,999</span>
+                        <span class="text-sm text-slate-400 pb-1">/ month</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1 billing-note">Billed monthly</p>
+                    <a href="#cta" class="mt-6 block text-center py-3 rounded-xl bg-rose-600 text-white font-bold text-sm hover:bg-rose-700 transition">Start free pilot</a>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-300">
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Up to 100 consultants and 25 pharmacies</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> All four portals, including the admin command center</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Multi-district geo-routing</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Network analytics and exports</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-400 mt-1"></i> Priority support</li>
+                    </ul>
+                </div>
+
+                <!-- Enterprise -->
+                <div class="p-8 rounded-3xl bg-white border border-slate-200 shadow-sm flex flex-col">
+                    <h3 class="text-lg font-bold text-slate-900">State &amp; Enterprise</h3>
+                    <p class="text-sm text-slate-500 mt-1">For state programs and large health systems.</p>
+                    <div class="mt-6 flex items-end gap-1">
+                        <span class="text-4xl font-extrabold text-slate-900">Custom</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">Priced by network size</p>
+                    <a href="#cta" class="mt-6 block text-center py-3 rounded-xl bg-white border border-slate-300 text-slate-800 font-bold text-sm hover:bg-slate-50 transition">Talk to us</a>
+                    <ul class="mt-6 space-y-3 text-sm text-slate-600">
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Unlimited providers and pharmacies</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Multi-state geo-routing</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Single sign-on and custom roles</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Integration with existing hospital systems</li>
+                        <li class="flex gap-3"><i class="fa-solid fa-check text-emerald-500 mt-1"></i> Dedicated onboarding manager</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ NEW: FAQ ============ -->
+    <section id="faq" class="py-20 bg-white border-t border-slate-200/80">
+        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full">FAQ</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">Questions we hear most</h2>
+            </div>
+
+            <div class="space-y-3">
+                <details class="group rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                    <summary class="flex items-center justify-between gap-4 font-bold text-slate-900 text-sm">
+                        Does AI make medical decisions?
+                        <i class="fa-solid fa-chevron-down faq-chevron text-slate-400 text-xs"></i>
+                    </summary>
+                    <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+                        No. AI sorts requests, suggests provider matches, and sends notifications. Diagnosis and treatment always stay with licensed medical professionals.
+                    </p>
+                </details>
+                <details class="group rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                    <summary class="flex items-center justify-between gap-4 font-bold text-slate-900 text-sm">
+                        How are providers and pharmacies verified?
+                        <i class="fa-solid fa-chevron-down faq-chevron text-slate-400 text-xs"></i>
+                    </summary>
+                    <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+                        Each provider submits registration and licence details, which our team reviews before their profile goes live. Verification status is shown on every profile.
+                    </p>
+                </details>
+                <details class="group rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                    <summary class="flex items-center justify-between gap-4 font-bold text-slate-900 text-sm">
+                        How is patient location used?
+                        <i class="fa-solid fa-chevron-down faq-chevron text-slate-400 text-xs"></i>
+                    </summary>
+                    <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+                        Location is used to rank nearby providers and pharmacies for a request. Patients control what they share, and access is limited by role and recorded in an audit trail.
+                    </p>
+                </details>
+                <details class="group rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                    <summary class="flex items-center justify-between gap-4 font-bold text-slate-900 text-sm">
+                        What does the free pilot include?
+                        <i class="fa-solid fa-chevron-down faq-chevron text-slate-400 text-xs"></i>
+                    </summary>
+                    <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+                        A full setup for one location with all portals for your plan, guided onboarding, and support while you test with real staff. You decide whether to go live afterwards.
+                    </p>
+                </details>
+                <details class="group rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                    <summary class="flex items-center justify-between gap-4 font-bold text-slate-900 text-sm">
+                        Can it connect to our existing systems?
+                        <i class="fa-solid fa-chevron-down faq-chevron text-slate-400 text-xs"></i>
+                    </summary>
+                    <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+                        Integration with existing hospital and pharmacy systems is available on the State &amp; Enterprise plan. Tell us what you use and we will scope it with you.
+                    </p>
+                </details>
+                <details class="group rounded-2xl bg-slate-50 border border-slate-200 p-5">
+                    <summary class="flex items-center justify-between gap-4 font-bold text-slate-900 text-sm">
+                        Can we start in one district and expand later?
+                        <i class="fa-solid fa-chevron-down faq-chevron text-slate-400 text-xs"></i>
+                    </summary>
+                    <p class="mt-3 text-sm text-slate-600 leading-relaxed">
+                        Yes. HealthSync is built geo-first, so you can add districts, cities, or states without changing how providers and patients use it.
+                    </p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ NEW: FINAL CTA + EARLY ACCESS FORM ============ -->
+    <section id="cta" class="py-20 bg-[#F8F9FC] border-t border-slate-200/80">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="rounded-3xl bg-slate-900 text-white overflow-hidden shadow-2xl relative">
+                <div class="absolute -top-24 -left-24 w-80 h-80 rounded-full bg-rose-500/20 blur-3xl" aria-hidden="true"></div>
+                <div class="absolute -bottom-24 -right-24 w-80 h-80 rounded-full bg-indigo-500/20 blur-3xl" aria-hidden="true"></div>
+                <div class="relative grid grid-cols-1 lg:grid-cols-2 gap-10 p-8 sm:p-12">
+                    <div class="flex flex-col justify-center">
+                        <h2 class="text-3xl sm:text-4xl font-extrabold leading-tight">Bring precision-matched care to your network</h2>
+                        <p class="text-slate-300 mt-4 text-base">
+                            Tell us about your organisation and we will set up a free pilot and walk you through HealthSync.
+                        </p>
+                        <ul class="mt-6 space-y-3 text-sm text-slate-200">
+                            <li class="flex gap-3"><i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i> Free pilot for your first location</li>
+                            <li class="flex gap-3"><i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i> Guided onboarding for your team</li>
+                            <li class="flex gap-3"><i class="fa-solid fa-circle-check text-emerald-400 mt-0.5"></i> A reply from our team within two working days</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white text-slate-900 rounded-2xl p-6 sm:p-8">
+                        <form id="early-access-form" novalidate class="space-y-4">
+                            <div>
+                                <label for="ea-name" class="block text-xs font-bold text-slate-700 mb-1">Full name</label>
+                                <input id="ea-name" name="name" type="text" autocomplete="name" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500">
+                            </div>
+                            <div>
+                                <label for="ea-email" class="block text-xs font-bold text-slate-700 mb-1">Work email</label>
+                                <input id="ea-email" name="email" type="email" autocomplete="email" required class="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500">
+                            </div>
+                            <div>
+                                <label for="ea-org" class="block text-xs font-bold text-slate-700 mb-1">I represent a</label>
+                                <select id="ea-org" name="org" class="w-full px-4 py-3 rounded-xl bg-white border border-slate-300 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-rose-500">
+                                    <option>Clinic or private practice</option>
+                                    <option>Hospital or hospital group</option>
+                                    <option>Pharmacy or pharmacy network</option>
+                                    <option>Telehealth provider</option>
+                                    <option>Government or public health program</option>
+                                    <option>Other</option>
+                                </select>
+                            </div>
+                            <p id="ea-error" class="hidden text-xs font-semibold text-rose-600" role="alert">Enter your name and a valid work email to continue.</p>
+                            <button type="submit" class="w-full py-3.5 rounded-xl bg-rose-600 text-white font-bold text-sm shadow-lg shadow-rose-600/30 hover:bg-rose-700 transition">
+                                Request early access
+                            </button>
+                            <p class="text-xs text-slate-500 text-center">We use your details only to contact you about HealthSync.</p>
+                        </form>
+                        <div id="ea-success" class="hidden text-center py-10" role="status">
+                            <div class="w-14 h-14 mx-auto rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl mb-4">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <h3 class="text-lg font-extrabold text-slate-900">Request received</h3>
+                            <p class="text-sm text-slate-600 mt-2">Thanks, <span id="ea-success-name"></span>. We will email you within two working days.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-white pt-14 pb-8 border-t border-slate-800 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-10 pb-10 border-b border-slate-800">
+                <div class="col-span-2 md:col-span-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-600 to-rose-400 flex items-center justify-center text-white">
+                            <i class="fa-solid fa-heart-pulse"></i>
+                        </div>
+                        <span class="text-lg font-bold">Healytics HealthSync</span>
+                    </div>
+                    <p class="text-sm text-slate-400 mt-4 max-w-sm">
+                        Unified, real-time, and location-aware healthcare SaaS infrastructure.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-4">Product</h4>
+                    <ul class="space-y-2.5 text-sm text-slate-400">
+                        <li><a href="#features" class="hover:text-white transition">Features</a></li>
+                        <li><a href="#portals" class="hover:text-white transition">Portals</a></li>
+                        <li><a href="#geo" class="hover:text-white transition">Geo-Intelligence</a></li>
+                        <li><a href="#simulation" class="hover:text-white transition">Live simulator</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-4">Company</h4>
+                    <ul class="space-y-2.5 text-sm text-slate-400">
+                        <li><a href="#how-it-works" class="hover:text-white transition">How it works</a></li>
+                        <li><a href="#pricing" class="hover:text-white transition">Pricing</a></li>
+                        <li><a href="#faq" class="hover:text-white transition">FAQ</a></li>
+                        <li><a href="#cta" class="hover:text-white transition">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-white mb-4">Trust</h4>
+                    <ul class="space-y-2.5 text-sm text-slate-400">
+                        <li><a href="#ai-trust" class="hover:text-white transition">AI &amp; trust</a></li>
+                        <li><a href="#" class="hover:text-white transition">Privacy policy</a></li>
+                        <li><a href="#" class="hover:text-white transition">Terms of service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="pt-6 text-xs text-slate-400 text-center md:text-left">
+                &copy; 2026 Healytics AI Platform. All rights reserved. Built with secure non-replacement AI & Haversine geo-routing.
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function switchPortal(portalId) {
+            // Hide all views
+            document.querySelectorAll('.portal-view').forEach(el => el.classList.add('hidden'));
+            // Remove active style from tabs
+            document.querySelectorAll('.portal-tab').forEach(el => {
+                el.classList.remove('bg-slate-900', 'text-white', 'shadow-md');
+                el.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+            });
+
+            // Show target view
+            document.getElementById('portal-' + portalId).classList.remove('hidden');
+            // Activate target tab
+            const activeTab = document.getElementById('tab-' + portalId);
+            activeTab.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+            activeTab.classList.add('bg-slate-900', 'text-white', 'shadow-md');
+        }
+
+        function broadcastCareRequest() {
+            const specialty = document.getElementById('patient-specialty').value;
+            const notes = document.getElementById('patient-notes').value;
+            const matchResults = document.getElementById('match-results');
+            
+            matchResults.innerHTML = `
+                <div class="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center justify-between animate-pulse">
+                    <span>Broadcasting "${specialty}" via Geo-Intelligence Layer...</span>
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                </div>
+            `;
+
+            setTimeout(() => {
+                matchResults.innerHTML = `
+                    <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-900 text-sm">Precision Match Found!</div>
+                                <div class="text-xs text-slate-600">${specialty} • 0.8 km away • Ready for Connect</div>
+                            </div>
+                        </div>
+                        <button onclick="alert('Connection established successfully with nearby medical provider!')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700">Connect</button>
+                    </div>
+                `;
+            }, 1200);
+        }
+
+        function alertConsultantAction(msg) {
+            // Custom clean modal alert simulation
+            const alertBox = document.createElement('div');
+            alertBox.className = 'fixed bottom-5 right-5 z-50 px-6 py-3 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-2xl transition animate-bounce';
+            alertBox.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400 mr-2"></i> ${msg}`;
+            document.body.appendChild(alertBox);
+            setTimeout(() => alertBox.remove(), 3000);
+        }
+
+        /* ---------- Mobile menu ---------- */
+        (function () {
+            const btn = document.getElementById('menu-btn');
+            const menu = document.getElementById('mobile-menu');
+            if (!btn || !menu) return;
+            btn.addEventListener('click', () => {
+                const open = menu.classList.toggle('hidden') === false;
+                btn.setAttribute('aria-expanded', String(open));
+                btn.querySelector('i').className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-bars';
+            });
+            menu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+                menu.classList.add('hidden');
+                btn.setAttribute('aria-expanded', 'false');
+                btn.querySelector('i').className = 'fa-solid fa-bars';
+            }));
+        })();
+
+        /* ---------- Pricing billing toggle ---------- */
+        (function () {
+            const buttons = document.querySelectorAll('.billing-btn');
+            const prices = document.querySelectorAll('.price');
+            const notes = document.querySelectorAll('.billing-note');
+            buttons.forEach(btn => btn.addEventListener('click', () => {
+                const period = btn.dataset.period;
+                buttons.forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+                prices.forEach(p => { p.textContent = p.dataset[period]; });
+                notes.forEach(n => { n.textContent = period === 'annual' ? 'Billed annually' : 'Billed monthly'; });
+            }));
+            // Style the "Save 20%" chip so it stays readable on the dark active button
+            const style = document.createElement('style');
+            style.textContent = '.billing-btn[aria-pressed="true"] .billing-save { background: rgba(255,255,255,0.15); color: #6ee7b7; }';
+            document.head.appendChild(style);
+        })();
+
+        /* ---------- Early-access form ---------- */
+        (function () {
+            const form = document.getElementById('early-access-form');
+            if (!form) return;
+            const error = document.getElementById('ea-error');
+            const success = document.getElementById('ea-success');
+            const successName = document.getElementById('ea-success-name');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = form.elements['name'].value.trim();
+                const email = form.elements['email'].value.trim();
+                const org = form.elements['org'].value;
+                const valid = name.length > 1 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+                error.classList.toggle('hidden', valid);
+                if (!valid) return;
+
+                // TODO: send { name, email, org } to your backend, form service, or CRM here.
+                // Example:
+                // await fetch('/api/early-access', {
+                //     method: 'POST',
+                //     headers: { 'Content-Type': 'application/json' },
+                //     body: JSON.stringify({ name, email, org })
+                // });
+
+                successName.textContent = name.split(' ')[0];
+                form.classList.add('hidden');
+                success.classList.remove('hidden');
+            });
+        })();
+    </script>
+</body>
+</html>
