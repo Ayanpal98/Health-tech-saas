@@ -9,11 +9,10 @@ permissions:
 
 jobs:
   integrate-auth:
-    if: !contains(github.event.head_commit.message, '[healthsync-auth]')
+    if: \${{ !contains(github.event.head_commit.message, '[healthsync-auth]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - name: Attach authentication layer
         shell: bash
         run: |
@@ -23,10 +22,9 @@ jobs:
           s = p.read_text(encoding='utf-8')
           tag = '<script src="auth.js"></script>'
           if tag not in s:
-              s = s.replace('</body>', '    ' + tag + '\\n</body>')
+              s = s.replace('</body>', '    ' + tag + '\n</body>')
               p.write_text(s, encoding='utf-8')
           PY
-
       - name: Commit integration
         run: |
           git config user.name "HealthSync Bot"
