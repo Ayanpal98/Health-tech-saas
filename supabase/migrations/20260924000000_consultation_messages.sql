@@ -9,6 +9,8 @@ create table if not exists public.consultation_messages (
 
 create index if not exists consultation_messages_request_created_idx
   on public.consultation_messages(request_id, created_at);
+create index if not exists consultation_messages_sender_idx
+  on public.consultation_messages(sender_id);
 
 alter table public.consultation_messages enable row level security;
 
