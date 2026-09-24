@@ -130,10 +130,10 @@
                     Try the simulator
                 </a>
                 <div data-healthsync-auth class="flex items-center space-x-2">
-                    <button type="button" data-healthsync-login class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold hover:bg-slate-50 transition">
+                    <button type="button" onclick="window.__healthsyncDirectAuth('login')" data-healthsync-login class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold hover:bg-slate-50 transition">
                         Sign in
                     </button>
-                    <button type="button" data-healthsync-signup class="rounded-xl bg-rose-600 text-white px-4 py-2.5 text-sm font-bold hover:bg-rose-700 transition">
+                    <button type="button" onclick="window.__healthsyncDirectAuth('signup')" data-healthsync-signup class="rounded-xl bg-rose-600 text-white px-4 py-2.5 text-sm font-bold hover:bg-rose-700 transition">
                         Get started
                     </button>
                 </div>
@@ -1308,6 +1308,67 @@
                 success.classList.remove('hidden');
             });
         })();
+    </script>
+    <script>
+    /* Direct auth fallback: the header buttons can open auth even if the Supabase JS CDN is blocked/delayed. */
+    window.__healthsyncDirectAuth = function(mode) {
+      const cfg = window.HEALTHSYNC_SUPABASE || {};
+      if (!cfg.url || !cfg.anonKey) { alert("HealthSync authentication is not configured."); return; }
+
+      document.getElementById("hs-direct-auth")?.remove();
+      const signup = mode === "signup";
+      const wrap = document.createElement("div");
+      wrap.id = "hs-direct-auth";
+      wrap.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(2,6,23,.72);display:flex;align-items:center;justify-content:center;padding:20px;font-family:Inter,system-ui,sans-serif";
+      wrap.innerHTML = `
+        <div style="width:100%;max-width:460px;background:#fff;border-radius:24px;padding:28px;box-shadow:0 25px 80px rgba(0,0,0,.3)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+            <div><h2 style="margin:0;font-size:22px;font-weight:800;color:#0f172a">${signup ? "Create your HealthSync account" : "Welcome back"}</h2><p style="margin:5px 0 0;color:#64748b;font-size:13px">Secure healthcare coordination access</p></div>
+            <button id="hs-direct-close" type="button" style="border:0;background:#f1f5f9;border-radius:50%;width:36px;height:36px;font-size:22px;cursor:pointer">×</button>
+          </div>
+          ${signup ? `<label style="display:block;font-size:13px;font-weight:700;margin:12px 0 6px">Account type</label>
+          <select id="hs-direct-role" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px">
+            <option value="patient">Patient</option><option value="consultant">Medical Consultant</option><option value="pharmacy">Pharmacy</option>
+          </select>
+          <label style="display:block;font-size:13px;font-weight:700;margin:12px 0 6px">Full name</label>
+          <input id="hs-direct-name" autocomplete="name" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px" placeholder="Your full name"> ` : ""}
+          <label style="display:block;font-size:13px;font-weight:700;margin:12px 0 6px">Email</label>
+          <input id="hs-direct-email" type="email" autocomplete="email" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px" placeholder="you@example.com">
+          <label style="display:block;font-size:13px;font-weight:700;margin:12px 0 6px">Password</label>
+          <input id="hs-direct-password" type="password" autocomplete="${signup ? "new-password" : "current-password"}" style="width:100%;box-sizing:border-box;padding:12px;border:1px solid #cbd5e1;border-radius:12px" placeholder="At least 8 characters">
+          <button id="hs-direct-submit" type="button" style="width:100%;margin-top:18px;padding:13px;border:0;border-radius:12px;background:#e11d48;color:#fff;font-weight:800;font-size:14px;cursor:pointer">${signup ? "Create secure account" : "Sign in"}</button>
+          <p id="hs-direct-message" style="min-height:20px;text-align:center;font-size:13px;color:#64748b;margin:12px 0 0"></p>
+          <div style="display:flex;justify-content:center;gap:8px;margin-top:10px;font-size:13px"><button type="button" id="hs-direct-switch" style="border:0;background:none;color:#e11d48;font-weight:700;cursor:pointer">${signup ? "Already have an account? Sign in" : "Need an account? Sign up"}</button></div>
+        </div>`;
+      document.body.appendChild(wrap);
+      wrap.querySelector("#hs-direct-close").onclick=()=>wrap.remove();
+      wrap.querySelector("#hs-direct-switch").onclick=()=>window.__healthsyncDirectAuth(signup ? "login" : "signup");
+      wrap.addEventListener("click",e=>{if(e.target===wrap)wrap.remove();});
+      wrap.querySelector("#hs-direct-submit").onclick=async()=>{
+        const msg=wrap.querySelector("#hs-direct-message"), btn=wrap.querySelector("#hs-direct-submit");
+        const email=wrap.querySelector("#hs-direct-email").value.trim(), password=wrap.querySelector("#hs-direct-password").value;
+        if(!email || password.length<8){msg.textContent="Enter a valid email and a password of at least 8 characters.";msg.style.color="#dc2626";return;}
+        if(signup && !wrap.querySelector("#hs-direct-name").value.trim()){msg.textContent="Please enter your full name.";msg.style.color="#dc2626";return;}
+        btn.disabled=true; btn.textContent="Please wait…"; msg.textContent="Connecting securely…"; msg.style.color="#64748b";
+        try {
+          const endpoint=signup ? "/auth/v1/signup" : "/auth/v1/token?grant_type=password";
+          const body=signup ? {email,password,data:{role:wrap.querySelector("#hs-direct-role").value,full_name:wrap.querySelector("#hs-direct-name").value.trim()}} : {email,password};
+          const res=await fetch(cfg.url+endpoint,{method:"POST",headers:{"Content-Type":"application/json","apikey":cfg.anonKey},body:JSON.stringify(body)});
+          const data=await res.json().catch(()=>({}));
+          if(!res.ok) throw new Error(data.msg || data.message || data.error_description || data.error || "Authentication failed.");
+          if(!signup && data.access_token){
+            const key="sb-"+new URL(cfg.url).hostname.split(".")[0]+"-auth-token";
+            localStorage.setItem(key,JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,token_type:data.token_type||"bearer",expires_in:data.expires_in,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600),user:data.user}));
+            msg.textContent="Signed in successfully. Loading your dashboard…";msg.style.color="#059669";
+            setTimeout(()=>location.reload(),300);
+          } else if(signup) {
+            msg.textContent=data.access_token ? "Account created. Loading your dashboard…" : "Account created. Check your email to confirm your address, then sign in.";
+            msg.style.color="#059669"; if(data.access_token){ const key="sb-"+new URL(cfg.url).hostname.split(".")[0]+"-auth-token"; localStorage.setItem(key,JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,token_type:data.token_type||"bearer",expires_in:data.expires_in,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600),user:data.user})); setTimeout(()=>location.reload(),300); }
+          }
+        } catch(err){msg.textContent=err.message||"Authentication failed.";msg.style.color="#dc2626";}
+        finally{btn.disabled=false;btn.textContent=signup?"Create secure account":"Sign in";}
+      };
+    };
     </script>
     <!-- Supabase must load before the auth client. -->
     <script src="supabase-config.js"></script>
