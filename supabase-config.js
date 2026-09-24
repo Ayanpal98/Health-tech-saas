@@ -1,13 +1,5 @@
-/*
- * Public Supabase browser configuration.
- *
- * Replace the empty values below with the Project URL and anon/publishable key
- * from Supabase Dashboard -> Project Settings -> API.
- *
- * The anon/publishable key is designed to be public in a browser application.
- * NEVER put a Supabase service_role/secret key in this file.
- */
+/* Public browser configuration for HealthSync. Never put a service_role/secret key here. */
 window.HEALTHSYNC_SUPABASE = {
-  url: "",
-  anonKey: ""
+  url: "https://aerhhmkidenrjuhohqhx.supabase.co",
+  anonKey: "sb_publishable_i0iMeyHve7HwMDjHMBT3JQ_VFDcV0ZQ"
 };
