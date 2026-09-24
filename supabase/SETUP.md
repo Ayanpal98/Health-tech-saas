@@ -42,3 +42,36 @@ Consultants and pharmacies start in pending verification status. Patients start 
 
 ## Current status
 This repository is still running the prototype UI/authentication layer. The next implementation step is to connect the patient, consultant and pharmacy portals to this database and remove localStorage authentication from production paths.
+
+
+## Build 1 — connect the deployed frontend
+
+1. In Supabase, open **Project Settings → API**.
+2. Copy the **Project URL** and **Publishable/anon key**.
+3. Put them into `supabase-config.js`:
+   - `url`: your Supabase Project URL
+   - `anonKey`: your browser-safe publishable/anon key
+4. Commit and push `supabase-config.js` to the branch connected to Vercel.
+5. In **Authentication → Providers**, enable **Email**.
+6. During testing you may disable email confirmation. For a real deployment, keep email confirmation enabled and configure your SMTP provider.
+7. In **Authentication → URL Configuration**, add your Vercel URL as the Site URL and redirect URL.
+8. Run `supabase/schema.sql` in the Supabase SQL Editor before testing signup.
+9. Open the Vercel site and use **Get started**.
+10. Create a Patient, Medical Consultant, or Pharmacy account. The selected role is stored in the user's auth metadata and the database trigger creates the corresponding `profiles` row.
+
+### What Build 1 now provides
+
+- Supabase email/password signup and sign-in.
+- Persistent Supabase sessions.
+- Role selection at signup: patient, consultant, pharmacy.
+- Automatic profile creation through the SQL trigger.
+- A role-aware dashboard after login.
+- Sign-out.
+- No passwords stored in localStorage.
+- No service-role key in browser code.
+
+### Important
+
+`supabase-config.js` contains only the browser-safe Supabase URL and anon/publishable key. Never place a Supabase service-role/secret key in the frontend.
+
+The dashboard is intentionally a Build 1 foundation. It does not yet expose clinical records, diagnosis, prescribing, or emergency treatment. Build 2 will connect patient consultation requests to the database and provider workflow.
