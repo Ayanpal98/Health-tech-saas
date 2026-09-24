@@ -169,8 +169,25 @@
         } else {
           const email = root.querySelector("#hs-email").value.trim();
           const password = root.querySelector("#hs-password").value;
-          const { error } = await supabase.auth.signInWithPassword({ email, password });
-          if (error) throw error;
+          const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+          if (error) {
+            if (error.message?.toLowerCase().includes("email not confirmed")) {
+              message.innerHTML = "Your email is not confirmed yet. <button type="button" id="hs-resend-confirm" class="underline font-bold">Resend confirmation email</button>";
+              message.className = "text-sm text-center text-amber-700";
+              root.querySelector("#hs-resend-confirm").onclick = async () => {
+                const { error: resendError } = await supabase.auth.resend({ type: "signup", email });
+                if (resendError) throw resendError;
+                message.textContent = "Confirmation email sent. Check your inbox and then sign in again.";
+              };
+              return;
+            }
+            throw error;
+          }
+          if (!data.session) {
+            message.textContent = "Sign-in succeeded but no active session was returned. Check your email confirmation and try again.";
+            message.className = "text-sm text-center text-amber-700";
+            return;
+          }
           root.remove();
           await renderSession();
         }
