@@ -1358,12 +1358,36 @@
           if(!res.ok) throw new Error(data.msg || data.message || data.error_description || data.error || "Authentication failed.");
           if(!signup && data.access_token){
             const key="sb-"+new URL(cfg.url).hostname.split(".")[0]+"-auth-token";
-            localStorage.setItem(key,JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,token_type:data.token_type||"bearer",expires_in:data.expires_in,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600),user:data.user}));
+            const sessionPayload={access_token:data.access_token,refresh_token:data.refresh_token,token_type:data.token_type||"bearer",expires_in:data.expires_in,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600),user:data.user};
+            localStorage.setItem(key,JSON.stringify(sessionPayload));
+            try {
+              if (window.supabaseClient?.auth?.setSession) {
+                await window.supabaseClient.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
+              } else if (window.supabase?.createClient) {
+                const client=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+                window.supabaseClient=client;
+                await client.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
+              }
+            } catch(sessionErr) {
+              console.warn("HealthSync session hydration warning:",sessionErr);
+            }
             msg.textContent="Signed in successfully. Loading your dashboard…";msg.style.color="#059669";
             setTimeout(()=>location.reload(),300);
           } else if(signup) {
             msg.textContent=data.access_token ? "Account created. Loading your dashboard…" : "Account created. Check your email to confirm your address, then sign in.";
-            msg.style.color="#059669"; if(data.access_token){ const key="sb-"+new URL(cfg.url).hostname.split(".")[0]+"-auth-token"; localStorage.setItem(key,JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,token_type:data.token_type||"bearer",expires_in:data.expires_in,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600),user:data.user})); setTimeout(()=>location.reload(),300); }
+            msg.style.color="#059669"; if(data.access_token){ const key="sb-"+new URL(cfg.url).hostname.split(".")[0]+"-auth-token"; const sessionPayload={access_token:data.access_token,refresh_token:data.refresh_token,token_type:data.token_type||"bearer",expires_in:data.expires_in,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600),user:data.user};
+            localStorage.setItem(key,JSON.stringify(sessionPayload));
+            try {
+              if (window.supabaseClient?.auth?.setSession) {
+                await window.supabaseClient.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
+              } else if (window.supabase?.createClient) {
+                const client=window.supabase.createClient(cfg.url,cfg.anonKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+                window.supabaseClient=client;
+                await client.auth.setSession({access_token:data.access_token,refresh_token:data.refresh_token});
+              }
+            } catch(sessionErr) {
+              console.warn("HealthSync session hydration warning:",sessionErr);
+            } setTimeout(()=>location.reload(),300); }
           }
         } catch(err){msg.textContent=err.message||"Authentication failed.";msg.style.color="#dc2626";}
         finally{btn.disabled=false;btn.textContent=signup?"Create secure account":"Sign in";}
