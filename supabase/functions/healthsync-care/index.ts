@@ -250,6 +250,42 @@ Deno.serve(
       return json({ ok: true, status: nextStatus, request_id: request.id });
     }
 
+    if (body.action === "send_message") {
+      const p = body as any;
+      const messageBody = String(p.body || "").trim();
+      if (!p.request_id || !messageBody || messageBody.length > 4000) return json({ error: "Request ID and a message up to 4000 characters are required" }, 400);
+      const { data: request } = await admin.from("consultation_requests").select("id, patient_id, status").eq("id", p.request_id).single();
+      if (!request || request.status !== "accepted") return json({ error: "This consultation is not active" }, 409);
+      const isPatient = profile.role === "patient" && request.patient_id === userId;
+      const { data: acceptedAssignment } = await admin.from("consultation_assignments").select("id, consultant_id").eq("request_id", request.id).eq("consultant_id", userId).eq("status", "accepted").maybeSingle();
+      if (!isPatient && !acceptedAssignment && profile.role !== "admin") return json({ error: "You are not a participant in this consultation" }, 403);
+      const { data: message, error: messageError } = await admin.from("consultation_messages").insert({ request_id: request.id, sender_id: userId, body: messageBody }).select("id, request_id, sender_id, body, created_at").single();
+      if (messageError) return json({ error: messageError.message }, 400);
+      const recipientId = isPatient
+        ? (await admin.from("consultation_assignments").select("consultant_id").eq("request_id", request.id).eq("status", "accepted").maybeSingle()).data?.consultant_id
+        : request.patient_id;
+      if (recipientId) await admin.from("notifications").insert({ user_id: recipientId, type: "consultation_message", title: "New consultation message", body: "You have a new message in an active HealthSync consultation.", entity_id: request.id });
+      return json({ message });
+    }
+
+    if (body.action === "complete" || body.action === "cancel") {
+      const p = body as any;
+      if (!p.request_id) return json({ error: "Request ID is required" }, 400);
+      const { data: request } = await admin.from("consultation_requests").select("id, patient_id, status").eq("id", p.request_id).single();
+      if (!request) return json({ error: "Request not found" }, 404);
+      const isPatient = profile.role === "patient" && request.patient_id === userId;
+      const { data: acceptedAssignment } = await admin.from("consultation_assignments").select("id").eq("request_id", request.id).eq("consultant_id", userId).eq("status", "accepted").maybeSingle();
+      const isConsultant = profile.role === "consultant" && !!acceptedAssignment;
+      if (!isPatient && !isConsultant && profile.role !== "admin") return json({ error: "You are not authorized to change this consultation" }, 403);
+      if (!["pending", "accepted"].includes(request.status)) return json({ error: "This request can no longer be changed" }, 409);
+      const nextStatus = body.action === "complete" ? "completed" : "cancelled";
+      await admin.from("consultation_requests").update({ status: nextStatus }).eq("id", request.id);
+      if (nextStatus === "cancelled") await admin.from("consultation_assignments").update({ status: "declined", responded_at: new Date().toISOString() }).eq("request_id", request.id).eq("status", "pending");
+      await admin.from("audit_logs").insert({ actor_id: userId, action: `consultation_request_${nextStatus}`, entity_type: "consultation_request", entity_id: request.id, metadata: { request_id: request.id } });
+      if (request.patient_id !== userId) await admin.from("notifications").insert({ user_id: request.patient_id, type: `consultation_${nextStatus}`, title: nextStatus === "completed" ? "Consultation completed" : "Consultation cancelled", body: nextStatus === "completed" ? "Your HealthSync consultation has been marked completed." : "Your HealthSync consultation has been cancelled.", entity_id: request.id });
+      return json({ ok: true, status: nextStatus, request_id: request.id });
+    }
+
     return json({ error: "Unsupported action" }, 400);
   }),
 );
