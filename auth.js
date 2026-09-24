@@ -1,13 +1,14 @@
 (() => {
-  const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm";
   let realtimeChannels = [];
 
   const loadSupabase = async () => {
     if (window.supabaseClient) return window.supabaseClient;
     const config = window.HEALTHSYNC_SUPABASE || {};
     if (!config.url || !config.anonKey) return null;
-    const { createClient } = await import(SUPABASE_CDN);
-    window.supabaseClient = createClient(config.url, config.anonKey, {
+    if (!window.supabase || typeof window.supabase.createClient !== "function") {
+      throw new Error("Supabase client library did not load. Please refresh the page.");
+    }
+    window.supabaseClient = window.supabase.createClient(config.url, config.anonKey, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
     return window.supabaseClient;
@@ -610,10 +611,16 @@
   const init = async () => {
     const host = document.querySelector("[data-healthsync-auth]");
     if (!host) return;
-    const supabase = await loadSupabase();
-    if (!supabase) return updateHeader(null);
-    supabase.auth.onAuthStateChange((_event, session) => updateHeader(session));
-    await renderSession();
+    try {
+      const supabase = await loadSupabase();
+      if (!supabase) return updateHeader(null);
+      supabase.auth.onAuthStateChange((_event, session) => updateHeader(session));
+      await renderSession();
+    } catch (error) {
+      console.error("HealthSync authentication initialization failed:", error);
+      updateHeader(null);
+      showToast(error.message || "Authentication could not be initialized.", "error");
+    }
   };
 
   window.HealthSyncAuth = { openAuth, openDashboard, requestCare: requestForm };
