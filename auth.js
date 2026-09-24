@@ -314,6 +314,17 @@
     return data || [];
   };
 
+  const fetchConsultantActive = async supabase => {
+    const { data, error } = await supabase
+      .from("consultation_assignments")
+      .select("id,request_id,status,responded_at,created_at,consultation_requests!inner(id,description,urgency,status,city,district,state,communication_preference,created_at,specialties(name))")
+      .eq("status", "accepted")
+      .order("responded_at", { ascending: false })
+      .limit(20);
+    if (error) throw error;
+    return data || [];
+  };
+
   const fetchNotifications = async supabase => {
     const { data, error } = await supabase
       .from("notifications")
@@ -428,49 +439,28 @@
   };
 
   const consultantDashboard = async (supabase, profile) => {
-    const [queue, notifications] = await Promise.all([
-      fetchConsultantQueue(supabase),
-      fetchNotifications(supabase)
-    ]);
+    const [queue, active, notifications] = await Promise.all([fetchConsultantQueue(supabase), fetchConsultantActive(supabase), fetchNotifications(supabase)]);
     const { data: consultantProfile } = await supabase.from("consultant_profiles").select("specialty,is_available,verification_status,service_radius_km").eq("user_id", profile.id).single();
-
     return `
       <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div><p class="text-sm text-slate-500">Consultant workspace</p><h3 class="text-2xl font-extrabold text-slate-900">Consultation queue</h3></div>
-        <div class="flex items-center gap-2">
-          <span class="rounded-full border px-3 py-2 text-xs font-bold ${consultantProfile?.verification_status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}">${consultantProfile?.verification_status === "active" ? "Verified" : "Verification pending"}</span>
-          <button id="hs-toggle-availability" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold">${consultantProfile?.is_available ? "Available" : "Set available"}</button>
-        </div>
+        <div class="flex items-center gap-2"><span class="rounded-full border px-3 py-2 text-xs font-bold ${consultantProfile?.verification_status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}">${consultantProfile?.verification_status === "active" ? "Verified" : "Verification pending"}</span><button id="hs-toggle-availability" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold">${consultantProfile?.is_available ? "Available" : "Set available"}</button></div>
       </div>
-
       <div class="grid md:grid-cols-3 gap-4 mb-7">
         <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Pending queue</p><p class="text-3xl font-black mt-2">${queue.length}</p></div>
-        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Specialty</p><p class="text-lg font-extrabold mt-2">${escapeHtml(consultantProfile?.specialty || "—")}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Active consultations</p><p class="text-3xl font-black mt-2">${active.length}</p></div>
         <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Service radius</p><p class="text-lg font-extrabold mt-2">${escapeHtml(consultantProfile?.service_radius_km || 25)} km</p></div>
       </div>
-
       <div class="space-y-3">
         ${queue.length ? queue.map(a => {
           const r = Array.isArray(a.consultation_requests) ? a.consultation_requests[0] : a.consultation_requests;
-          return `
-            <article class="rounded-2xl border border-slate-200 p-5 bg-white">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div><div class="flex items-center gap-2"><h4 class="font-extrabold">${escapeHtml(r?.specialties?.name || consultantProfile?.specialty || "Consultation")}</h4><span class="text-[11px] uppercase font-bold rounded-full border px-2 py-1 ${statusClass(r?.urgency)}">${escapeHtml(r?.urgency || "routine")}</span></div>
-                <p class="text-sm text-slate-600 mt-2">${escapeHtml(r?.description || "Request details unavailable")}</p></div>
-                <span class="text-xs text-slate-500">${formatDate(r?.created_at)}</span>
-              </div>
-              <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p class="text-xs text-slate-500">Area: ${escapeHtml([r?.city,r?.district,r?.state].filter(Boolean).join(", ") || "Not provided")}</p>
-                <div class="flex gap-2"><button data-assignment="${a.id}" data-decision="decline" class="hs-assignment-action rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold">Decline</button><button data-assignment="${a.id}" data-decision="accept" class="hs-assignment-action rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-bold">Accept</button></div>
-              </div>
-            </article>`;
+          return `<article class="rounded-2xl border border-slate-200 p-5 bg-white"><div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2"><h4 class="font-extrabold">${escapeHtml(r?.specialties?.name || consultantProfile?.specialty || "Consultation")}</h4><span class="text-[11px] uppercase font-bold rounded-full border px-2 py-1 ${statusClass(r?.urgency)}">${escapeHtml(r?.urgency || "routine")}</span></div><p class="text-sm text-slate-600 mt-2">${escapeHtml(r?.description || "Request details unavailable")}</p></div><span class="text-xs text-slate-500">${formatDate(r?.created_at)}</span></div><div class="mt-4 flex flex-wrap items-center justify-between gap-3"><p class="text-xs text-slate-500">Area: ${escapeHtml([r?.city,r?.district,r?.state].filter(Boolean).join(", ") || "Not provided")}</p><div class="flex gap-2"><button data-assignment="${a.id}" data-decision="decline" class="hs-assignment-action rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold">Decline</button><button data-assignment="${a.id}" data-decision="accept" class="hs-assignment-action rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-bold">Accept</button></div></div></article>`;
         }).join("") : '<div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">No matching requests are waiting for you.</div>'}
       </div>
-
-      <div class="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-5">
-        <h4 class="font-extrabold mb-2">Notifications</h4>
-        ${notifications.slice(0,4).map(n => `<div class="py-2 border-b last:border-0 border-slate-200"><p class="text-sm font-bold">${escapeHtml(n.title)}</p><p class="text-xs text-slate-600">${escapeHtml(n.body)}</p></div>`).join("") || '<p class="text-sm text-slate-500">No notifications yet.</p>'}
-      </div>`;
+      <div class="mt-7"><h4 class="font-extrabold mb-3">Active consultations</h4><div class="space-y-3">
+        ${active.length ? active.map(a => { const r=Array.isArray(a.consultation_requests)?a.consultation_requests[0]:a.consultation_requests; return `<article class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><div class="flex items-start justify-between gap-3"><div><h4 class="font-extrabold">${escapeHtml(r?.specialties?.name || consultantProfile?.specialty || "Consultation")}</h4><p class="text-sm text-slate-600 mt-1">${escapeHtml(r?.description || "")}</p></div><span class="text-xs text-emerald-700 font-bold">Accepted</span></div><div class="mt-4 flex justify-between items-center"><span class="text-xs text-slate-500">${formatDate(r?.created_at)}</span><button data-consultation-request="${r?.id}" class="hs-consultation-open rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold">Open consultation</button></div></article>`; }).join("") : '<p class="text-sm text-slate-500">No active consultations.</p>'}
+      </div></div>
+      <div class="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-5"><h4 class="font-extrabold mb-2">Notifications</h4>${notifications.slice(0,4).map(n => `<div class="py-2 border-b last:border-0 border-slate-200"><p class="text-sm font-bold">${escapeHtml(n.title)}</p><p class="text-xs text-slate-600">${escapeHtml(n.body)}</p></div>`).join("") || '<p class="text-sm text-slate-500">No notifications yet.</p>'}</div>`;
   };
 
   const toggleAvailability = async (supabase, userId, nextValue) => {
@@ -533,7 +523,14 @@
             catch (err) { showToast(err.message || "Could not cancel request.", "error"); }
           });
         } else if (session.profile.role === "consultant") {
+          const activeConsultations = await fetchConsultantActive(supabase);
           body.innerHTML = await consultantDashboard(supabase, session.profile);
+          root.querySelectorAll(".hs-consultation-open").forEach(btn => btn.onclick = async () => {
+            const item = activeConsultations.find(a => a.request_id === btn.dataset.consultationRequest);
+            if (!item) return;
+            const request = Array.isArray(item.consultation_requests) ? item.consultation_requests[0] : item.consultation_requests;
+            await consultationWorkspace(supabase, { ...request, id: request.id, assignments: [{ id: item.id, request_id: item.request_id, status: "accepted" }] }, session.profile);
+          });
           root.querySelector("#hs-toggle-availability").onclick = async () => {
             try {
               const { data } = await supabase.from("consultant_profiles").select("is_available").eq("user_id", session.profile.id).single();
