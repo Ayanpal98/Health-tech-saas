@@ -56,8 +56,8 @@ with check (public.current_role() = 'admin');
 
 alter function public.set_updated_at() set search_path = public;
 
-revoke execute on function public.handle_new_user() from anon, authenticated;
-revoke execute on function public.current_role() from anon;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+revoke execute on function public.current_role() from public, anon;
 grant execute on function public.current_role() to authenticated;
 
 drop policy if exists "profiles own update" on public.profiles;
