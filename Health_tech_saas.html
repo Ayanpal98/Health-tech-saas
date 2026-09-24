@@ -199,12 +199,12 @@
                     <!-- Quick stats row -->
                     <div class="grid grid-cols-3 gap-6 pt-8 border-t border-slate-200/80">
                         <div>
-                            <div class="text-2xl font-bold text-slate-900">&lt; 3 Min</div>
+                            <div class="text-2xl font-bold text-slate-900">Rapid</div>
                             <div class="text-xs text-slate-500 font-medium">Avg. Match Time</div>
                         </div>
                         <div>
                             <div class="text-2xl font-bold text-rose-600">100%</div>
-                            <div class="text-xs text-slate-500 font-medium">Geo-Verified Providers</div>
+                            <div class="text-xs text-slate-500 font-medium">Geo-Aware Matching</div>
                         </div>
                         <div>
                             <div class="text-2xl font-bold text-indigo-600">Real-Time</div>
@@ -672,7 +672,7 @@
                     </div>
                     <h3 class="text-xl font-bold text-slate-900 mb-2">Security & Compliance</h3>
                     <p class="text-slate-600 text-sm leading-relaxed">
-                        Built on an uncompromised foundation of privacy, HIPAA-ready security, patient consent management, rigorous provider verification, role-based access control, and full auditability.
+                        Built around privacy-first architecture, role-based access, consent-aware workflows, provider verification controls, and auditability. HealthSync is not presented as HIPAA compliant or as an emergency service.
                     </p>
                 </div>
             </div>
@@ -685,7 +685,7 @@
                 <span class="text-xs font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-3 py-1 rounded-full">Interactive SaaS Simulator</span>
                 <h2 class="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-3">HealthSync Portal Simulator</h2>
                 <p class="text-slate-600 mt-4 text-base">
-                    Test live geo-routing, patient broadcasting, consultant triage, and pharmacy fulfillment in real-time.
+                    Explore an interactive product simulator using sample data. Live patient-to-consultant requests run through the authenticated HealthSync dashboard.
                 </p>
             </div>
 
@@ -713,9 +713,9 @@
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center pb-6 border-b border-slate-200">
                         <div>
                             <h3 class="text-xl font-extrabold text-slate-900">Patient Care Broadcasting</h3>
-                            <p class="text-xs text-slate-500">Instantly broadcast medical needs to verified nearby providers and pharmacies.</p>
+                            <p class="text-xs text-slate-500">Demo flow only — sample provider data is shown here. Live requests are handled inside the authenticated patient dashboard.</p>
                         </div>
-                        <span class="mt-2 sm:mt-0 px-3 py-1 bg-rose-50 text-rose-600 text-xs font-bold rounded-full">GPS Active: 25.5788° N, 91.8933° E</span>
+                        <span class="mt-2 sm:mt-0 px-3 py-1 bg-rose-50 text-rose-600 text-xs font-bold rounded-full">Demo location • sample data</span>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1218,11 +1218,11 @@
                                 <i class="fa-solid fa-check"></i>
                             </div>
                             <div>
-                                <div class="font-bold text-slate-900 text-sm">Precision Match Found!</div>
-                                <div class="text-xs text-slate-600">${specialty} • 0.8 km away • Ready for Connect</div>
+                                <div class="font-bold text-slate-900 text-sm">Sample Match (Demo)</div>
+                                <div class="text-xs text-slate-600">${specialty} • 0.8 km away • Demo result — no live connection</div>
                             </div>
                         </div>
-                        <button onclick="alert('Connection established successfully with nearby medical provider!')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700">Connect</button>
+                        <button onclick="alert('This is a sample simulator result. Sign in to use the live care workflow.')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700">Connect</button>
                     </div>
                 `;
             }, 1200);
