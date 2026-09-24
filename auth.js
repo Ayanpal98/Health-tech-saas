@@ -5,9 +5,31 @@
     if (window.supabaseClient) return window.supabaseClient;
     const config = window.HEALTHSYNC_SUPABASE || {};
     if (!config.url || !config.anonKey) return null;
+
+    // Load the browser client ourselves as a fail-safe. This keeps auth working
+    // even if the page's external script tag is delayed or omitted by caching.
     if (!window.supabase || typeof window.supabase.createClient !== "function") {
-      throw new Error("Supabase client library did not load. Please refresh the page.");
+      await new Promise((resolve, reject) => {
+        const existing = document.querySelector('script[data-healthsync-supabase]');
+        if (existing) {
+          existing.addEventListener("load", resolve, { once: true });
+          existing.addEventListener("error", () => reject(new Error("Supabase client library could not be loaded.")), { once: true });
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js";
+        script.async = false;
+        script.dataset.healthsyncSupabase = "true";
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Supabase client library could not be loaded. Check your internet connection or CDN access."));
+        document.head.appendChild(script);
+      });
     }
+
+    if (!window.supabase || typeof window.supabase.createClient !== "function") {
+      throw new Error("Supabase client library did not load.");
+    }
+
     window.supabaseClient = window.supabase.createClient(config.url, config.anonKey, {
       auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
     });
@@ -598,6 +620,8 @@
 
     container.querySelector("#hs-login")?.addEventListener("click", () => openAuth("login"));
     container.querySelector("#hs-signup")?.addEventListener("click", () => openAuth("signup"));
+    container.querySelector("[data-healthsync-login]")?.addEventListener("click", () => openAuth("login"));
+    container.querySelector("[data-healthsync-signup]")?.addEventListener("click", () => openAuth("signup"));
     container.querySelector("#hs-dashboard")?.addEventListener("click", openDashboard);
   };
 
