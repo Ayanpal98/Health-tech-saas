@@ -187,7 +187,7 @@
             message.textContent = "Account created. Check your email to confirm your address, then sign in.";
           } else {
             root.remove();
-            await renderSession();
+            await renderSession({ openDashboardOnAuth: true });
           }
         } else {
           const email = root.querySelector("#hs-email").value.trim();
@@ -212,7 +212,7 @@
             return;
           }
           root.remove();
-          await renderSession();
+          await renderSession({ openDashboardOnAuth: true });
         }
       } catch (err) {
         message.textContent = err.message || "Authentication failed.";
@@ -625,11 +625,15 @@
     container.querySelector("#hs-dashboard")?.addEventListener("click", openDashboard);
   };
 
-  const renderSession = async () => {
+  const renderSession = async ({ openDashboardOnAuth = false } = {}) => {
     const supabase = await loadSupabase();
     if (!supabase) return updateHeader(null);
     const { data: { session } } = await supabase.auth.getSession();
     updateHeader(session);
+    if (session && openDashboardOnAuth) {
+      await openDashboard();
+    }
+    return session;
   };
 
   const init = async () => {
@@ -639,7 +643,7 @@
       const supabase = await loadSupabase();
       if (!supabase) return updateHeader(null);
       supabase.auth.onAuthStateChange((_event, session) => updateHeader(session));
-      await renderSession();
+      await renderSession({ openDashboardOnAuth: true });
     } catch (error) {
       console.error("HealthSync authentication initialization failed:", error);
       updateHeader(null);
