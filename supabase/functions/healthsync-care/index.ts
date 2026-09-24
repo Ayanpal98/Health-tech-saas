@@ -250,6 +250,40 @@ Deno.serve(
       return json({ ok: true, status: nextStatus, request_id: request.id });
     }
 
+    if (body.action === "workspace") {
+      const { data: requests, error: requestsError } = await admin
+        .from("consultation_requests")
+        .select("id,description,urgency,status,communication_preference,city,district,state,created_at,specialties(name)")
+        .eq(profile.role === "patient" ? "patient_id" : "id", profile.role === "patient" ? userId : "__none__")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (requestsError) return json({ error: requestsError.message }, 400);
+      const ids = (requests || []).map((r: any) => r.id);
+      if (!ids.length) return json({ requests: [] });
+
+      const { data: assignments, error: assignmentsError } = await admin
+        .from("consultation_assignments")
+        .select("id,request_id,consultant_id,status,responded_at,created_at")
+        .in("request_id", ids);
+      if (assignmentsError) return json({ error: assignmentsError.message }, 400);
+
+      const consultantIds = [...new Set((assignments || []).map((a: any) => a.consultant_id))];
+      const { data: consultants } = consultantIds.length
+        ? await admin.from("profiles").select("id,full_name,city,district,state").in("id", consultantIds)
+        : { data: [] };
+
+      const consultantMap = new Map((consultants || []).map((p: any) => [p.id, p]));
+      return json({
+        requests: (requests || []).map((r: any) => ({
+          ...r,
+          assignments: (assignments || []).filter((a: any) => a.request_id === r.id).map((a: any) => ({
+            ...a,
+            consultant: consultantMap.get(a.consultant_id) || null
+          }))
+        }))
+      });
+    }
+
     if (body.action === "send_message") {
       const p = body as any;
       const messageBody = String(p.body || "").trim();
