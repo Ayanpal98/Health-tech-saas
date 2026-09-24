@@ -1,5 +1,6 @@
 (() => {
   const SUPABASE_CDN = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm";
+  let realtimeChannels = [];
 
   const loadSupabase = async () => {
     if (window.supabaseClient) return window.supabaseClient;
@@ -24,13 +25,32 @@
     admin: "Administrator"
   }[role] || "Account");
 
+  const statusLabel = status => ({
+    pending: "Matching",
+    accepted: "Accepted",
+    declined: "Declined",
+    cancelled: "Cancelled",
+    completed: "Completed"
+  }[status] || status || "Unknown");
+
+  const statusClass = status => ({
+    pending: "bg-amber-50 text-amber-700 border-amber-200",
+    accepted: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    declined: "bg-red-50 text-red-700 border-red-200",
+    cancelled: "bg-slate-100 text-slate-600 border-slate-200",
+    completed: "bg-blue-50 text-blue-700 border-blue-200"
+  }[status] || "bg-slate-100 text-slate-600 border-slate-200");
+
+  const formatDate = value => value
+    ? new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })
+    : "—";
+
   const showToast = (message, type = "info") => {
-    const old = document.getElementById("healthsync-toast");
-    if (old) old.remove();
+    document.getElementById("healthsync-toast")?.remove();
     const el = document.createElement("div");
     el.id = "healthsync-toast";
-    el.className = "fixed right-5 bottom-5 z-[100] max-w-sm rounded-2xl px-5 py-4 shadow-2xl text-sm font-semibold " +
-      (type === "error" ? "bg-red-600 text-white" : "bg-slate-900 text-white");
+    el.className = "fixed right-5 bottom-5 z-[120] max-w-sm rounded-2xl px-5 py-4 shadow-2xl text-sm font-semibold " +
+      (type === "error" ? "bg-red-600 text-white" : type === "success" ? "bg-emerald-600 text-white" : "bg-slate-900 text-white");
     el.textContent = message;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 4500);
@@ -40,12 +60,15 @@
     document.getElementById("healthsync-modal")?.remove();
     const wrap = document.createElement("div");
     wrap.id = "healthsync-modal";
-    wrap.className = "fixed inset-0 z-[90] bg-slate-950/60 backdrop-blur-sm p-4 overflow-y-auto";
+    wrap.className = "fixed inset-0 z-[110] bg-slate-950/60 backdrop-blur-sm p-4 overflow-y-auto";
     wrap.innerHTML = `
       <div class="min-h-full flex items-center justify-center">
-        <div class="w-full max-w-lg rounded-3xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
+        <div class="w-full max-w-3xl rounded-3xl bg-white shadow-2xl border border-slate-200 overflow-hidden">
           <div class="px-6 py-5 border-b flex items-center justify-between">
-            <div><h2 class="text-xl font-extrabold text-slate-900">${escapeHtml(title)}</h2><p class="text-xs text-slate-500 mt-1">Secure account access</p></div>
+            <div>
+              <h2 class="text-xl font-extrabold text-slate-900">${escapeHtml(title)}</h2>
+              <p class="text-xs text-slate-500 mt-1">Health coordination workspace</p>
+            </div>
             <button id="hs-modal-close" class="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600" aria-label="Close">×</button>
           </div>
           <div class="p-6">${content}</div>
@@ -100,21 +123,21 @@
 
   const openAuth = async (mode = "login") => {
     if (!configReady()) {
-      modal(`
-        <div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
-          <strong>Supabase is not configured yet.</strong><br>
-          Add the Project URL and anon/publishable key to <code>supabase-config.js</code>, then redeploy.
-        </div>`, "Connect HealthSync");
+      modal(`<div class="rounded-2xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-900">
+        <strong>Supabase is not configured yet.</strong><br>Add the Project URL and publishable key to <code>supabase-config.js</code>.
+      </div>`, "Connect HealthSync");
       return;
     }
 
     const root = modal(authForm(mode), mode === "signup" ? "Create your HealthSync account" : "Welcome back");
-    root.querySelectorAll(".hs-auth-tab").forEach(btn => {
+    const bindTabs = () => root.querySelectorAll(".hs-auth-tab").forEach(btn => {
       btn.onclick = () => {
         root.querySelector(".p-6").innerHTML = authForm(btn.dataset.mode);
+        bindTabs();
         bindAuthForm(root, btn.dataset.mode);
       };
     });
+    bindTabs();
     bindAuthForm(root, mode);
   };
 
@@ -125,6 +148,7 @@
       const supabase = await loadSupabase();
       if (!supabase) return;
       message.textContent = "Working…";
+      message.className = "text-sm text-center text-slate-500";
 
       try {
         if (mode === "signup") {
@@ -132,14 +156,10 @@
           const fullName = root.querySelector("#hs-name").value.trim();
           const email = root.querySelector("#hs-email").value.trim();
           const password = root.querySelector("#hs-password").value;
-
           const { data, error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: { data: { role, full_name: fullName } }
+            email, password, options: { data: { role, full_name: fullName } }
           });
           if (error) throw error;
-
           if (!data.session) {
             message.textContent = "Account created. Check your email to confirm your address, then sign in.";
           } else {
@@ -161,77 +181,357 @@
     };
   };
 
-  const fetchProfile = async supabase => {
+  const getSessionData = async supabase => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    if (error) {
-      console.error("Profile lookup failed:", error);
-      return null;
-    }
-    return { user, profile: data };
+    const { data: profile, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+    if (error || !profile) return null;
+    return { user, profile };
   };
 
-  const dashboardContent = (role, profile) => {
-    const name = escapeHtml(profile?.full_name || "there");
-    const common = `
-      <div class="flex items-center justify-between gap-4 mb-7">
-        <div><p class="text-sm text-slate-500">Signed in as</p><h2 class="text-2xl font-extrabold text-slate-900">${name}</h2><span class="inline-flex mt-2 rounded-full bg-rose-50 text-rose-700 px-3 py-1 text-xs font-bold">${roleLabel(role)}</span></div>
-        <button id="hs-logout" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold hover:bg-slate-50">Sign out</button>
-      </div>`;
+  const invokeCare = async (payload) => {
+    const supabase = await loadSupabase();
+    if (!supabase) throw new Error("Supabase is not configured.");
+    const { data, error } = await supabase.functions.invoke("healthsync-care", { body: payload });
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  };
 
-    const cards = {
-      patient: [
-        ["Request care", "Create a consultation request and share only the information needed for provider matching.", "fa-hand-holding-medical"],
-        ["Find consultants", "Future matching will use specialty, availability and service location.", "fa-user-doctor"],
-        ["Track requests", "View consultation status and provider responses from one dashboard.", "fa-clock"]
-      ],
-      consultant: [
-        ["Consultation queue", "Review eligible patient requests routed to your specialty and service area.", "fa-inbox"],
-        ["Availability", "Control whether your profile can receive new consultation requests.", "fa-toggle-on"],
-        ["Patient communication", "Secure consultation workflows will be added in the next build.", "fa-comments"]
-      ],
-      pharmacy: [
-        ["Local requests", "Receive pharmacy coordination requests routed to your service area.", "fa-prescription-bottle-medical"],
-        ["Store profile", "Keep your operating details and service location up to date.", "fa-store"],
-        ["Fulfilment", "Track pharmacy coordination status as the workflow is expanded.", "fa-truck-medical"]
-      ],
-      admin: [
-        ["Provider verification", "Review consultant and pharmacy account status.", "fa-user-shield"],
-        ["Platform activity", "Monitor operational events and audit activity.", "fa-chart-line"],
-        ["Safety controls", "Manage account status and platform access.", "fa-shield-halved"]
-      ]
-    }[role] || [];
+  const getLocation = () => new Promise(resolve => {
+    if (!navigator.geolocation) return resolve(null);
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
+      () => resolve(null),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 }
+    );
+  });
 
-    return common + `
-      <div class="grid md:grid-cols-3 gap-4">
-        ${cards.map(([title, desc, icon]) => `
-          <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-            <div class="w-11 h-11 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-rose-600 mb-4"><i class="fa-solid ${icon}"></i></div>
-            <h3 class="font-extrabold text-slate-900 mb-2">${title}</h3>
-            <p class="text-sm leading-6 text-slate-600">${desc}</p>
-          </div>`).join("")}
+  const requestForm = async () => {
+    const supabase = await loadSupabase();
+    const { data: specialties, error } = await supabase.from("specialties").select("id,name").eq("active", true).order("name");
+    if (error) throw error;
+
+    const root = modal(`
+      <form id="hs-care-form" class="space-y-5">
+        <div class="rounded-2xl bg-rose-50 border border-rose-100 p-4 text-sm text-rose-900">
+          <strong>Need emergency care?</strong> HealthSync is a coordination platform, not an emergency treatment service. If this is a medical emergency, contact local emergency services or go to the nearest emergency department.
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-bold mb-1">Specialty</label>
+            <select id="hs-care-specialty" required class="w-full rounded-xl border border-slate-300 px-4 py-3">
+              <option value="">Select specialty</option>
+              ${(specialties || []).map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("")}
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-bold mb-1">Urgency</label>
+            <select id="hs-care-urgency" class="w-full rounded-xl border border-slate-300 px-4 py-3">
+              <option value="routine">Routine</option>
+              <option value="priority">Priority</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">What do you need help with?</label>
+          <textarea id="hs-care-description" required minlength="8" rows="5" class="w-full rounded-xl border border-slate-300 px-4 py-3" placeholder="Describe your concern clearly. Avoid unnecessary sensitive information."></textarea>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4">
+          <input id="hs-care-city" class="rounded-xl border border-slate-300 px-4 py-3" placeholder="City">
+          <input id="hs-care-district" class="rounded-xl border border-slate-300 px-4 py-3" placeholder="District">
+          <input id="hs-care-state" class="rounded-xl border border-slate-300 px-4 py-3" placeholder="State">
+        </div>
+        <div class="rounded-2xl border border-slate-200 p-4 flex items-center justify-between gap-4">
+          <div>
+            <p class="font-bold text-slate-900">Use my approximate location</p>
+            <p id="hs-location-status" class="text-xs text-slate-500 mt-1">Location is optional and used for provider matching.</p>
+          </div>
+          <button type="button" id="hs-get-location" class="shrink-0 rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold hover:bg-slate-50">Use location</button>
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">Communication preference</label>
+          <select id="hs-care-communication" class="w-full rounded-xl border border-slate-300 px-4 py-3">
+            <option value="secure_chat">Secure chat</option>
+            <option value="voice">Voice</option>
+            <option value="video">Video</option>
+          </select>
+        </div>
+        <button type="submit" class="w-full rounded-xl bg-rose-600 hover:bg-rose-700 text-white py-3 font-extrabold">Find available consultant</button>
+        <p id="hs-care-message" class="text-sm text-center text-slate-500"></p>
+      </form>`, "Request care");
+
+    let coords = null;
+    root.querySelector("#hs-get-location").onclick = async () => {
+      const status = root.querySelector("#hs-location-status");
+      status.textContent = "Requesting location permission…";
+      coords = await getLocation();
+      status.textContent = coords ? "Location captured for matching." : "Location was not available. You can continue with city/district/state.";
+    };
+
+    root.querySelector("#hs-care-form").onsubmit = async e => {
+      e.preventDefault();
+      const message = root.querySelector("#hs-care-message");
+      message.textContent = "Creating request and finding available consultants…";
+      try {
+        if (!coords) coords = await getLocation();
+        const data = await invokeCare({
+          action: "create",
+          specialty_id: root.querySelector("#hs-care-specialty").value,
+          urgency: root.querySelector("#hs-care-urgency").value,
+          description: root.querySelector("#hs-care-description").value.trim(),
+          city: root.querySelector("#hs-care-city").value.trim(),
+          district: root.querySelector("#hs-care-district").value.trim(),
+          state: root.querySelector("#hs-care-state").value.trim(),
+          communication_preference: root.querySelector("#hs-care-communication").value,
+          latitude: coords?.latitude ?? null,
+          longitude: coords?.longitude ?? null
+        });
+        root.remove();
+        showToast(data.message || "Care request created.", "success");
+        await openDashboard();
+      } catch (err) {
+        message.textContent = err.message || "Could not create the care request.";
+        message.className = "text-sm text-center text-red-600";
+      }
+    };
+  };
+
+  const fetchPatientRequests = async supabase => {
+    const { data, error } = await supabase
+      .from("consultation_requests")
+      .select("id,description,urgency,status,communication_preference,city,district,state,created_at,specialties(name)")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw error;
+
+    const ids = (data || []).map(r => r.id);
+    if (!ids.length) return [];
+    const { data: assignments, error: aError } = await supabase
+      .from("consultation_assignments")
+      .select("id,request_id,consultant_id,status,responded_at,created_at,consultant_profiles!inner(specialty,profiles!inner(full_name,city,district,state))")
+      .in("request_id", ids);
+    if (aError) throw aError;
+
+    return (data || []).map(r => ({
+      ...r,
+      assignments: (assignments || []).filter(a => a.request_id === r.id)
+    }));
+  };
+
+  const fetchConsultantQueue = async supabase => {
+    const { data, error } = await supabase
+      .from("consultation_assignments")
+      .select("id,request_id,status,responded_at,created_at,consultation_requests!inner(id,description,urgency,status,city,district,state,communication_preference,created_at,specialties(name))")
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw error;
+    return data || [];
+  };
+
+  const fetchNotifications = async supabase => {
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("id,type,title,body,entity_id,read_at,created_at")
+      .order("created_at", { ascending: false })
+      .limit(8);
+    if (error) throw error;
+    return data || [];
+  };
+
+  const patientDashboard = async (supabase, profile) => {
+    const [requests, notifications] = await Promise.all([
+      fetchPatientRequests(supabase),
+      fetchNotifications(supabase)
+    ]);
+
+    return `
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-sm text-slate-500">Patient workspace</p>
+          <h3 class="text-2xl font-extrabold text-slate-900">Welcome, ${escapeHtml(profile.full_name)}</h3>
+        </div>
+        <button id="hs-request-care" class="rounded-xl bg-rose-600 text-white px-4 py-3 text-sm font-extrabold hover:bg-rose-700"><i class="fa-solid fa-hand-holding-medical mr-2"></i>Request care</button>
       </div>
-      <div class="mt-6 rounded-2xl border border-rose-100 bg-rose-50 p-5 text-sm text-rose-900">
-        <strong>Build 1:</strong> Authentication and role-based access are connected to Supabase. Clinical diagnosis, prescribing and emergency response are not automated by this platform.
+
+      <div class="grid md:grid-cols-3 gap-4 mb-7">
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Requests</p><p class="text-3xl font-black mt-2">${requests.length}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Active</p><p class="text-3xl font-black mt-2">${requests.filter(r => ["pending","accepted"].includes(r.status)).length}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Notifications</p><p class="text-3xl font-black mt-2">${notifications.filter(n => !n.read_at).length}</p></div>
+      </div>
+
+      <div class="grid lg:grid-cols-[1fr_320px] gap-5">
+        <section>
+          <div class="flex items-center justify-between mb-3"><h4 class="font-extrabold text-slate-900">Your care requests</h4><span class="text-xs text-slate-500">Live status</span></div>
+          <div class="space-y-3">
+            ${requests.length ? requests.map(r => {
+              const specialty = r.specialties?.name || "Healthcare";
+              const assignment = r.assignments.find(a => a.status === "accepted") || r.assignments.find(a => a.status === "pending") || r.assignments[0];
+              const consultant = assignment?.consultant_profiles?.profiles;
+              const consultantName = Array.isArray(consultant) ? consultant[0]?.full_name : consultant?.full_name;
+              return `
+                <article class="rounded-2xl border border-slate-200 bg-white p-5">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div><div class="flex items-center gap-2"><h5 class="font-extrabold">${escapeHtml(specialty)}</h5><span class="text-[11px] uppercase font-bold rounded-full border px-2 py-1 ${statusClass(r.status)}">${statusLabel(r.status)}</span></div>
+                    <p class="text-sm text-slate-600 mt-2 line-clamp-2">${escapeHtml(r.description)}</p></div>
+                    <span class="text-xs text-slate-500">${formatDate(r.created_at)}</span>
+                  </div>
+                  <div class="mt-4 grid sm:grid-cols-3 gap-3 text-xs text-slate-600">
+                    <div><span class="font-bold">Urgency:</span> ${escapeHtml(r.urgency)}</div>
+                    <div><span class="font-bold">Area:</span> ${escapeHtml([r.city,r.district,r.state].filter(Boolean).join(", ") || "Not provided")}</div>
+                    <div><span class="font-bold">Consultant:</span> ${escapeHtml(consultantName || (assignment ? "Matching" : "Not assigned"))}</div>
+                  </div>
+                </article>`;
+            }).join("") : `
+              <div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">No care requests yet. Start by requesting a consultant.</div>`}
+          </div>
+        </section>
+        <aside class="rounded-2xl bg-slate-50 border border-slate-200 p-5 h-fit">
+          <h4 class="font-extrabold mb-3">Notifications</h4>
+          <div class="space-y-3">
+            ${notifications.length ? notifications.map(n => `<div class="rounded-xl bg-white border border-slate-200 p-3"><p class="text-sm font-bold">${escapeHtml(n.title)}</p><p class="text-xs text-slate-600 mt-1">${escapeHtml(n.body)}</p><p class="text-[10px] text-slate-400 mt-2">${formatDate(n.created_at)}</p></div>`).join("") : '<p class="text-sm text-slate-500">No notifications yet.</p>'}
+          </div>
+        </aside>
       </div>`;
+  };
+
+  const consultantDashboard = async (supabase, profile) => {
+    const [queue, notifications] = await Promise.all([
+      fetchConsultantQueue(supabase),
+      fetchNotifications(supabase)
+    ]);
+    const { data: consultantProfile } = await supabase.from("consultant_profiles").select("specialty,is_available,verification_status,service_radius_km").eq("user_id", profile.id).single();
+
+    return `
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div><p class="text-sm text-slate-500">Consultant workspace</p><h3 class="text-2xl font-extrabold text-slate-900">Consultation queue</h3></div>
+        <div class="flex items-center gap-2">
+          <span class="rounded-full border px-3 py-2 text-xs font-bold ${consultantProfile?.verification_status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}">${consultantProfile?.verification_status === "active" ? "Verified" : "Verification pending"}</span>
+          <button id="hs-toggle-availability" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold">${consultantProfile?.is_available ? "Available" : "Set available"}</button>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4 mb-7">
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Pending queue</p><p class="text-3xl font-black mt-2">${queue.length}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Specialty</p><p class="text-lg font-extrabold mt-2">${escapeHtml(consultantProfile?.specialty || "—")}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Service radius</p><p class="text-lg font-extrabold mt-2">${escapeHtml(consultantProfile?.service_radius_km || 25)} km</p></div>
+      </div>
+
+      <div class="space-y-3">
+        ${queue.length ? queue.map(a => {
+          const r = Array.isArray(a.consultation_requests) ? a.consultation_requests[0] : a.consultation_requests;
+          return `
+            <article class="rounded-2xl border border-slate-200 p-5 bg-white">
+              <div class="flex flex-wrap items-start justify-between gap-3">
+                <div><div class="flex items-center gap-2"><h4 class="font-extrabold">${escapeHtml(r?.specialties?.name || consultantProfile?.specialty || "Consultation")}</h4><span class="text-[11px] uppercase font-bold rounded-full border px-2 py-1 ${statusClass(r?.urgency)}">${escapeHtml(r?.urgency || "routine")}</span></div>
+                <p class="text-sm text-slate-600 mt-2">${escapeHtml(r?.description || "Request details unavailable")}</p></div>
+                <span class="text-xs text-slate-500">${formatDate(r?.created_at)}</span>
+              </div>
+              <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <p class="text-xs text-slate-500">Area: ${escapeHtml([r?.city,r?.district,r?.state].filter(Boolean).join(", ") || "Not provided")}</p>
+                <div class="flex gap-2"><button data-assignment="${a.id}" data-decision="decline" class="hs-assignment-action rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold">Decline</button><button data-assignment="${a.id}" data-decision="accept" class="hs-assignment-action rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-bold">Accept</button></div>
+              </div>
+            </article>`;
+        }).join("") : '<div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">No matching requests are waiting for you.</div>'}
+      </div>
+
+      <div class="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-5">
+        <h4 class="font-extrabold mb-2">Notifications</h4>
+        ${notifications.slice(0,4).map(n => `<div class="py-2 border-b last:border-0 border-slate-200"><p class="text-sm font-bold">${escapeHtml(n.title)}</p><p class="text-xs text-slate-600">${escapeHtml(n.body)}</p></div>`).join("") || '<p class="text-sm text-slate-500">No notifications yet.</p>'}
+      </div>`;
+  };
+
+  const toggleAvailability = async (supabase, userId, nextValue) => {
+    const { error } = await supabase.from("consultant_profiles").update({ is_available: nextValue }).eq("user_id", userId);
+    if (error) throw error;
+  };
+
+  const dashboardContent = (role, profile) => `
+    <div class="flex items-center justify-between gap-4 mb-7">
+      <div><p class="text-sm text-slate-500">Signed in as</p><h2 class="text-2xl font-extrabold text-slate-900">${escapeHtml(profile?.full_name || "there")}</h2><span class="inline-flex mt-2 rounded-full bg-rose-50 text-rose-700 px-3 py-1 text-xs font-bold">${roleLabel(role)}</span></div>
+      <button id="hs-logout" class="rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold hover:bg-slate-50">Sign out</button>
+    </div>
+    <div id="hs-dashboard-body" class="min-h-[180px]"><div class="text-center py-10 text-slate-500">Loading your workspace…</div></div>`;
+
+  const subscribeRealtime = async (supabase, profile, refresh) => {
+    realtimeChannels.forEach(ch => supabase.removeChannel(ch));
+    realtimeChannels = [];
+    const userId = profile.id;
+
+    const channel = supabase.channel(`healthsync-user-${userId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "consultation_assignments", filter: `consultant_id=eq.${userId}` }, refresh)
+      .on("postgres_changes", { event: "*", schema: "public", table: "consultation_requests", filter: `patient_id=eq.${userId}` }, refresh)
+      .subscribe();
+    realtimeChannels.push(channel);
   };
 
   const openDashboard = async () => {
     const supabase = await loadSupabase();
     if (!supabase) return openAuth("login");
-    const session = await fetchProfile(supabase);
+    const session = await getSessionData(supabase);
     if (!session) {
       showToast("Your account is signed in, but the profile is not available yet.", "error");
       return;
     }
+
     const root = modal(dashboardContent(session.profile.role, session.profile), "HealthSync Dashboard");
     root.querySelector("#hs-logout").onclick = async () => {
+      realtimeChannels.forEach(ch => supabase.removeChannel(ch));
+      realtimeChannels = [];
       await supabase.auth.signOut();
       root.remove();
       updateHeader(null);
       showToast("You have been signed out.");
     };
+
+    const body = root.querySelector("#hs-dashboard-body");
+    const refresh = async () => {
+      try {
+        if (session.profile.role === "patient") {
+          body.innerHTML = await patientDashboard(supabase, session.profile);
+          root.querySelector("#hs-request-care").onclick = requestForm;
+        } else if (session.profile.role === "consultant") {
+          body.innerHTML = await consultantDashboard(supabase, session.profile);
+          root.querySelector("#hs-toggle-availability").onclick = async () => {
+            try {
+              const { data } = await supabase.from("consultant_profiles").select("is_available").eq("user_id", session.profile.id).single();
+              await toggleAvailability(supabase, session.profile.id, !data?.is_available);
+              await refresh();
+              showToast("Availability updated.", "success");
+            } catch (err) { showToast(err.message || "Could not update availability.", "error"); }
+          };
+          root.querySelectorAll(".hs-assignment-action").forEach(btn => {
+            btn.onclick = async () => {
+              btn.disabled = true;
+              try {
+                const result = await invokeCare({ action: "respond", assignment_id: btn.dataset.assignment, decision: btn.dataset.decision });
+                showToast(result.status === "accepted" ? "Request accepted." : "Request declined.", result.status === "accepted" ? "success" : "info");
+                await refresh();
+              } catch (err) {
+                btn.disabled = false;
+                showToast(err.message || "Could not update request.", "error");
+              }
+            };
+          });
+        } else {
+          body.innerHTML = `
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="rounded-2xl border p-5"><h3 class="font-extrabold">Provider verification</h3><p class="text-sm text-slate-600 mt-2">Review provider accounts and activate verified consultants/pharmacies.</p></div>
+              <div class="rounded-2xl border p-5"><h3 class="font-extrabold">Platform activity</h3><p class="text-sm text-slate-600 mt-2">Audit operational events as the platform grows.</p></div>
+              <div class="rounded-2xl border p-5"><h3 class="font-extrabold">Safety controls</h3><p class="text-sm text-slate-600 mt-2">Manage access and account status.</p></div>
+            </div>`;
+          };
+        }
+      } catch (err) {
+        body.innerHTML = `<div class="rounded-2xl bg-red-50 border border-red-200 p-5 text-sm text-red-700">${escapeHtml(err.message || "Could not load dashboard.")}</div>`;
+      }
+    };
+
+    await refresh();
+    await subscribeRealtime(supabase, session.profile, refresh);
   };
 
   const updateHeader = session => {
@@ -257,17 +557,12 @@
   const init = async () => {
     const host = document.querySelector("[data-healthsync-auth]");
     if (!host) return;
-
     const supabase = await loadSupabase();
-    if (!supabase) {
-      updateHeader(null);
-      return;
-    }
-
+    if (!supabase) return updateHeader(null);
     supabase.auth.onAuthStateChange((_event, session) => updateHeader(session));
     await renderSession();
   };
 
-  window.HealthSyncAuth = { openAuth, openDashboard };
+  window.HealthSyncAuth = { openAuth, openDashboard, requestCare: requestForm };
   init();
 })();
