@@ -43,7 +43,7 @@ begin
   insert into public.consultant_profiles
     (user_id, specialty, verification_status, is_available, service_radius_km, location)
   values
-    (consultant_id, 'General Medicine', 'verified', true, 50,
+    (consultant_id, 'General Medicine', 'active'::public.account_status, true, 50,
      ST_SetSRID(ST_MakePoint(91.2868, 23.8315), 4326)::geography)
   on conflict (user_id) do update
     set specialty = excluded.specialty,
@@ -58,15 +58,12 @@ begin
   where id = pharmacy_id;
 
   insert into public.pharmacy_profiles
-    (user_id, business_name, verification_status, service_radius_km, location)
+    (user_id, business_name, verification_status)
   values
-    (pharmacy_id, 'HealthSync QA Pharmacy', 'verified', 50,
-     ST_SetSRID(ST_MakePoint(91.2868, 23.8315), 4326)::geography)
+    (pharmacy_id, 'HealthSync QA Pharmacy', 'active'::public.account_status)
   on conflict (user_id) do update
     set business_name = excluded.business_name,
-        verification_status = excluded.verification_status,
-        service_radius_km = excluded.service_radius_km,
-        location = excluded.location;
+        verification_status = excluded.verification_status;
 end $$;
 
 -- Verification
