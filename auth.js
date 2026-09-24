@@ -299,25 +299,8 @@
   };
 
   const fetchPatientRequests = async supabase => {
-    const { data, error } = await supabase
-      .from("consultation_requests")
-      .select("id,description,urgency,status,communication_preference,city,district,state,created_at,specialties(name)")
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) throw error;
-
-    const ids = (data || []).map(r => r.id);
-    if (!ids.length) return [];
-    const { data: assignments, error: aError } = await supabase
-      .from("consultation_assignments")
-      .select("id,request_id,consultant_id,status,responded_at,created_at,consultant_profiles!inner(specialty,profiles!inner(full_name,city,district,state))")
-      .in("request_id", ids);
-    if (aError) throw aError;
-
-    return (data || []).map(r => ({
-      ...r,
-      assignments: (assignments || []).filter(a => a.request_id === r.id)
-    }));
+    const data = await invokeCare({ action: "workspace" });
+    return data?.requests || [];
   };
 
   const fetchConsultantQueue = async supabase => {
@@ -326,6 +309,17 @@
       .select("id,request_id,status,responded_at,created_at,consultation_requests!inner(id,description,urgency,status,city,district,state,communication_preference,created_at,specialties(name))")
       .eq("status", "pending")
       .order("created_at", { ascending: false })
+      .limit(20);
+    if (error) throw error;
+    return data || [];
+  };
+
+  const fetchConsultantActive = async supabase => {
+    const { data, error } = await supabase
+      .from("consultation_assignments")
+      .select("id,request_id,status,responded_at,created_at,consultation_requests!inner(id,description,urgency,status,city,district,state,communication_preference,created_at,specialties(name))")
+      .eq("status", "accepted")
+      .order("responded_at", { ascending: false })
       .limit(20);
     if (error) throw error;
     return data || [];
@@ -341,106 +335,132 @@
     return data || [];
   };
 
-  const patientDashboard = async (supabase, profile) => {
-    const [requests, notifications] = await Promise.all([
-      fetchPatientRequests(supabase),
-      fetchNotifications(supabase)
-    ]);
+  const requestStage = status => ({
+    pending: ["Submitted", "Matching", "Consultant notified"],
+    accepted: ["Submitted", "Matching", "Consultant notified", "Accepted"],
+    completed: ["Submitted", "Matching", "Consultant notified", "Accepted", "Completed"],
+    cancelled: ["Submitted", "Cancelled"],
+    declined: ["Submitted", "Matching", "No consultant accepted"]
+  }[status] || ["Submitted"]);
 
+  const renderTimeline = status => {
+    const stages = ["Submitted", "Matching", "Consultant notified", "Accepted", "Completed"];
+    const reached = requestStage(status);
+    return `<div class="grid grid-cols-5 gap-1 mt-4">${stages.map(stage => `<div class="text-center"><div class="h-1.5 rounded-full ${reached.includes(stage) ? "bg-emerald-500" : "bg-slate-200"}"></div><p class="text-[9px] mt-1">${stage}</p></div>`).join("")}</div>`;
+  };
+
+  const consultationWorkspace = async (supabase, request, profile) => {
+    const specialty = request.specialties?.name || "Healthcare";
+    const assignment = request.assignments?.find(a => a.status === "accepted") || request.assignments?.[0];
+    const consultant = assignment?.consultant;
+    const { data: messages, error } = await supabase.from("consultation_messages").select("id,sender_id,body,created_at").eq("request_id", request.id).order("created_at", { ascending: true });
+    if (error) throw error;
+    const renderMessages = rows => (rows || []).map(m => `<div class="flex ${m.sender_id === profile.id ? "justify-end" : "justify-start"}"><div class="max-w-[80%] rounded-2xl px-4 py-2 ${m.sender_id === profile.id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-800"}"><p class="text-sm whitespace-pre-wrap">${escapeHtml(m.body)}</p><p class="text-[10px] opacity-60 mt-1">${formatDate(m.created_at)}</p></div></div>`).join("") || '<p class="text-sm text-slate-500 text-center py-12">No messages yet. Start the secure conversation.</p>';
+    const root = modal(`
+      <div class="space-y-5">
+        <div class="rounded-2xl bg-slate-50 border border-slate-200 p-4">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div><p class="text-xs uppercase font-bold text-slate-500">Active consultation</p><h3 class="text-xl font-extrabold mt-1">${escapeHtml(specialty)}</h3><p class="text-xs text-slate-500 mt-1">Request ID: ${escapeHtml(request.id)}</p></div>
+            <span class="rounded-full border px-3 py-1 text-xs font-bold ${statusClass(request.status)}">${statusLabel(request.status)}</span>
+          </div>
+          <p class="text-sm text-slate-600 mt-3">${escapeHtml(request.description)}</p>
+          ${consultant ? `<div class="mt-4 rounded-xl bg-white border p-3 text-sm"><span class="font-bold">Consultant:</span> ${escapeHtml(consultant.full_name || "Assigned consultant")} ${consultant.city ? "• " + escapeHtml(consultant.city) : ""}</div>` : ""}
+        </div>
+        <div id="hs-chat-list" class="h-72 overflow-y-auto rounded-2xl border border-slate-200 p-4 bg-white space-y-3">${renderMessages(messages)}</div>
+        <form id="hs-chat-form" class="flex gap-2"><input id="hs-chat-input" maxlength="4000" required class="flex-1 rounded-xl border border-slate-300 px-4 py-3" placeholder="Write a message…"><button class="rounded-xl bg-slate-900 text-white px-5 font-bold">Send</button></form>
+        <div class="flex flex-wrap gap-2">
+          ${request.status === "accepted" ? '<button id="hs-complete-request" class="rounded-xl bg-emerald-600 text-white px-4 py-2.5 text-sm font-bold">Mark consultation completed</button>' : ""}
+          ${["pending","accepted"].includes(request.status) ? '<button id="hs-cancel-request" class="rounded-xl border border-red-200 text-red-700 px-4 py-2.5 text-sm font-bold">Cancel request</button>' : ""}
+        </div>
+        <p class="text-[11px] text-slate-500">HealthSync coordinates access and communication. Clinical diagnosis, treatment and prescribing remain with licensed professionals. Do not use chat for emergencies.</p>
+      </div>`, "Secure consultation workspace");
+    const list = root.querySelector("#hs-chat-list");
+    list.scrollTop = list.scrollHeight;
+    const refreshMessages = async () => {
+      const latest = await supabase.from("consultation_messages").select("id,sender_id,body,created_at").eq("request_id", request.id).order("created_at", { ascending: true });
+      list.innerHTML = renderMessages(latest.data);
+      list.scrollTop = list.scrollHeight;
+    };
+    root.querySelector("#hs-chat-form").onsubmit = async e => {
+      e.preventDefault();
+      const input = root.querySelector("#hs-chat-input");
+      const body = input.value.trim();
+      if (!body) return;
+      input.disabled = true;
+      try { await invokeCare({ action: "send_message", request_id: request.id, body }); input.value = ""; await refreshMessages(); }
+      catch (err) { showToast(err.message || "Could not send message.", "error"); }
+      input.disabled = false; input.focus();
+    };
+    const action = async type => {
+      try { await invokeCare({ action: type, request_id: request.id }); root.remove(); await openDashboard(); showToast(type === "complete" ? "Consultation completed." : "Request cancelled.", "success"); }
+      catch (err) { showToast(err.message || "Could not update consultation.", "error"); }
+    };
+    root.querySelector("#hs-complete-request")?.addEventListener("click", () => action("complete"));
+    root.querySelector("#hs-cancel-request")?.addEventListener("click", () => action("cancel"));
+    const channel = supabase.channel(`healthsync-chat-${request.id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "consultation_messages", filter: `request_id=eq.${request.id}` }, refreshMessages).subscribe();
+    const close = root.querySelector("#hs-modal-close");
+    close?.addEventListener("click", () => supabase.removeChannel(channel));
+    root.addEventListener("click", e => { if (e.target === root) supabase.removeChannel(channel); });
+  };
+
+  const patientDashboard = async (supabase, profile) => {
+    const [requests, notifications] = await Promise.all([fetchPatientRequests(supabase), fetchNotifications(supabase)]);
     return `
       <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p class="text-sm text-slate-500">Patient workspace</p>
-          <h3 class="text-2xl font-extrabold text-slate-900">Welcome, ${escapeHtml(profile.full_name)}</h3>
-        </div>
+        <div><p class="text-sm text-slate-500">Patient workspace</p><h3 class="text-2xl font-extrabold text-slate-900">Welcome, ${escapeHtml(profile.full_name)}</h3></div>
         <button id="hs-request-care" class="rounded-xl bg-rose-600 text-white px-4 py-3 text-sm font-extrabold hover:bg-rose-700"><i class="fa-solid fa-hand-holding-medical mr-2"></i>Request care</button>
       </div>
-
       <div class="grid md:grid-cols-3 gap-4 mb-7">
         <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Requests</p><p class="text-3xl font-black mt-2">${requests.length}</p></div>
         <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Active</p><p class="text-3xl font-black mt-2">${requests.filter(r => ["pending","accepted"].includes(r.status)).length}</p></div>
-        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Notifications</p><p class="text-3xl font-black mt-2">${notifications.filter(n => !n.read_at).length}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Unread</p><p class="text-3xl font-black mt-2">${notifications.filter(n => !n.read_at).length}</p></div>
       </div>
-
-      <div class="grid lg:grid-cols-[1fr_320px] gap-5">
-        <section>
-          <div class="flex items-center justify-between mb-3"><h4 class="font-extrabold text-slate-900">Your care requests</h4><span class="text-xs text-slate-500">Live status</span></div>
-          <div class="space-y-3">
-            ${requests.length ? requests.map(r => {
-              const specialty = r.specialties?.name || "Healthcare";
-              const assignment = r.assignments.find(a => a.status === "accepted") || r.assignments.find(a => a.status === "pending") || r.assignments[0];
-              const consultant = assignment?.consultant_profiles?.profiles;
-              const consultantName = Array.isArray(consultant) ? consultant[0]?.full_name : consultant?.full_name;
-              return `
-                <article class="rounded-2xl border border-slate-200 bg-white p-5">
-                  <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div><div class="flex items-center gap-2"><h5 class="font-extrabold">${escapeHtml(specialty)}</h5><span class="text-[11px] uppercase font-bold rounded-full border px-2 py-1 ${statusClass(r.status)}">${statusLabel(r.status)}</span></div>
-                    <p class="text-sm text-slate-600 mt-2 line-clamp-2">${escapeHtml(r.description)}</p></div>
-                    <span class="text-xs text-slate-500">${formatDate(r.created_at)}</span>
-                  </div>
-                  <div class="mt-4 grid sm:grid-cols-3 gap-3 text-xs text-slate-600">
-                    <div><span class="font-bold">Urgency:</span> ${escapeHtml(r.urgency)}</div>
-                    <div><span class="font-bold">Area:</span> ${escapeHtml([r.city,r.district,r.state].filter(Boolean).join(", ") || "Not provided")}</div>
-                    <div><span class="font-bold">Consultant:</span> ${escapeHtml(consultantName || (assignment ? "Matching" : "Not assigned"))}</div>
-                  </div>
-                </article>`;
-            }).join("") : `
-              <div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">No care requests yet. Start by requesting a consultant.</div>`}
-          </div>
-        </section>
-        <aside class="rounded-2xl bg-slate-50 border border-slate-200 p-5 h-fit">
-          <h4 class="font-extrabold mb-3">Notifications</h4>
-          <div class="space-y-3">
-            ${notifications.length ? notifications.map(n => `<div class="rounded-xl bg-white border border-slate-200 p-3"><p class="text-sm font-bold">${escapeHtml(n.title)}</p><p class="text-xs text-slate-600 mt-1">${escapeHtml(n.body)}</p><p class="text-[10px] text-slate-400 mt-2">${formatDate(n.created_at)}</p></div>`).join("") : '<p class="text-sm text-slate-500">No notifications yet.</p>'}
-          </div>
-        </aside>
-      </div>`;
+      <div class="rounded-2xl bg-rose-50 border border-rose-100 p-4 mb-5 text-sm text-rose-900"><strong>Emergency:</strong> HealthSync is not an emergency service. Contact local emergency services or go to the nearest emergency department for medical emergencies.</div>
+      <div class="space-y-4">
+        ${requests.length ? requests.map(r => {
+          const specialty = r.specialties?.name || "Healthcare";
+          const assignment = r.assignments?.find(a => a.status === "accepted") || r.assignments?.find(a => a.status === "pending") || r.assignments?.[0];
+          const consultant = assignment?.consultant;
+          return `<article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div><div class="flex items-center gap-2"><h4 class="font-extrabold">${escapeHtml(specialty)}</h4><span class="text-[11px] uppercase font-bold rounded-full border px-2 py-1 ${statusClass(r.status)}">${statusLabel(r.status)}</span></div><p class="text-sm text-slate-600 mt-2">${escapeHtml(r.description)}</p></div>
+              <div class="text-right"><p class="text-xs text-slate-400">Request ID</p><p class="text-[11px] font-mono text-slate-600">${escapeHtml(r.id)}</p><p class="text-xs text-slate-400 mt-1">${formatDate(r.created_at)}</p></div>
+            </div>
+            ${renderTimeline(r.status)}
+            <div class="mt-4 grid sm:grid-cols-3 gap-3 text-xs text-slate-600"><div><span class="font-bold">Urgency:</span> ${escapeHtml(r.urgency)}</div><div><span class="font-bold">Area:</span> ${escapeHtml([r.city,r.district,r.state].filter(Boolean).join(", ") || "Not provided")}</div><div><span class="font-bold">Consultant:</span> ${escapeHtml(consultant?.full_name || (assignment ? "Awaiting response" : "Matching"))}</div></div>
+            <div class="mt-4 flex flex-wrap gap-2">
+              ${r.status === "accepted" ? '<button data-open-consultation="' + r.id + '" class="hs-open-consultation rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold">Open consultation</button>' : ""}
+              ${["pending","accepted"].includes(r.status) ? '<button data-cancel-request="' + r.id + '" class="hs-cancel-request rounded-xl border border-red-200 text-red-700 px-4 py-2.5 text-sm font-bold">Cancel request</button>' : ""}
+            </div>
+          </article>`;
+        }).join("") : '<div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">No care requests yet. Start by requesting a consultant.</div>'}
+      </div>
+      <aside class="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-5"><h4 class="font-extrabold mb-3">Recent notifications</h4>${notifications.length ? notifications.slice(0,5).map(n => `<div class="py-2 border-b last:border-0 border-slate-200"><p class="text-sm font-bold">${escapeHtml(n.title)}</p><p class="text-xs text-slate-600 mt-1">${escapeHtml(n.body)}</p><p class="text-[10px] text-slate-400 mt-1">${formatDate(n.created_at)}</p></div>`).join("") : '<p class="text-sm text-slate-500">No notifications yet.</p>'}</aside>`;
   };
 
   const consultantDashboard = async (supabase, profile) => {
-    const [queue, notifications] = await Promise.all([
-      fetchConsultantQueue(supabase),
-      fetchNotifications(supabase)
-    ]);
+    const [queue, active, notifications] = await Promise.all([fetchConsultantQueue(supabase), fetchConsultantActive(supabase), fetchNotifications(supabase)]);
     const { data: consultantProfile } = await supabase.from("consultant_profiles").select("specialty,is_available,verification_status,service_radius_km").eq("user_id", profile.id).single();
-
     return `
       <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div><p class="text-sm text-slate-500">Consultant workspace</p><h3 class="text-2xl font-extrabold text-slate-900">Consultation queue</h3></div>
-        <div class="flex items-center gap-2">
-          <span class="rounded-full border px-3 py-2 text-xs font-bold ${consultantProfile?.verification_status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}">${consultantProfile?.verification_status === "active" ? "Verified" : "Verification pending"}</span>
-          <button id="hs-toggle-availability" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold">${consultantProfile?.is_available ? "Available" : "Set available"}</button>
-        </div>
+        <div class="flex items-center gap-2"><span class="rounded-full border px-3 py-2 text-xs font-bold ${consultantProfile?.verification_status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}">${consultantProfile?.verification_status === "active" ? "Verified" : "Verification pending"}</span><button id="hs-toggle-availability" class="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-bold">${consultantProfile?.is_available ? "Available" : "Set available"}</button></div>
       </div>
-
       <div class="grid md:grid-cols-3 gap-4 mb-7">
         <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Pending queue</p><p class="text-3xl font-black mt-2">${queue.length}</p></div>
-        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Specialty</p><p class="text-lg font-extrabold mt-2">${escapeHtml(consultantProfile?.specialty || "—")}</p></div>
+        <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Active consultations</p><p class="text-3xl font-black mt-2">${active.length}</p></div>
         <div class="rounded-2xl border border-slate-200 p-5"><p class="text-xs uppercase font-bold text-slate-500">Service radius</p><p class="text-lg font-extrabold mt-2">${escapeHtml(consultantProfile?.service_radius_km || 25)} km</p></div>
       </div>
-
       <div class="space-y-3">
         ${queue.length ? queue.map(a => {
           const r = Array.isArray(a.consultation_requests) ? a.consultation_requests[0] : a.consultation_requests;
-          return `
-            <article class="rounded-2xl border border-slate-200 p-5 bg-white">
-              <div class="flex flex-wrap items-start justify-between gap-3">
-                <div><div class="flex items-center gap-2"><h4 class="font-extrabold">${escapeHtml(r?.specialties?.name || consultantProfile?.specialty || "Consultation")}</h4><span class="text-[11px] uppercase font-bold rounded-full border px-2 py-1 ${statusClass(r?.urgency)}">${escapeHtml(r?.urgency || "routine")}</span></div>
-                <p class="text-sm text-slate-600 mt-2">${escapeHtml(r?.description || "Request details unavailable")}</p></div>
-                <span class="text-xs text-slate-500">${formatDate(r?.created_at)}</span>
-              </div>
-              <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <p class="text-xs text-slate-500">Area: ${escapeHtml([r?.city,r?.district,r?.state].filter(Boolean).join(", ") || "Not provided")}</p>
-                <div class="flex gap-2"><button data-assignment="${a.id}" data-decision="decline" class="hs-assignment-action rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold">Decline</button><button data-assignment="${a.id}" data-decision="accept" class="hs-assignment-action rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-bold">Accept</button></div>
-              </div>
-            </article>`;
+          return `<article class="rounded-2xl border border-slate-200 p-5 bg-white"><div class="flex flex-wrap items-start justify-between gap-3"><div><div class="flex items-center gap-2"><h4 class="font-extrabold">${escapeHtml(r?.specialties?.name || consultantProfile?.specialty || "Consultation")}</h4><span class="text-[11px] uppercase font-bold rounded-full border px-2 py-1 ${statusClass(r?.urgency)}">${escapeHtml(r?.urgency || "routine")}</span></div><p class="text-sm text-slate-600 mt-2">${escapeHtml(r?.description || "Request details unavailable")}</p></div><span class="text-xs text-slate-500">${formatDate(r?.created_at)}</span></div><div class="mt-4 flex flex-wrap items-center justify-between gap-3"><p class="text-xs text-slate-500">Area: ${escapeHtml([r?.city,r?.district,r?.state].filter(Boolean).join(", ") || "Not provided")}</p><div class="flex gap-2"><button data-assignment="${a.id}" data-decision="decline" class="hs-assignment-action rounded-xl border border-slate-300 px-4 py-2 text-sm font-bold">Decline</button><button data-assignment="${a.id}" data-decision="accept" class="hs-assignment-action rounded-xl bg-emerald-600 text-white px-4 py-2 text-sm font-bold">Accept</button></div></div></article>`;
         }).join("") : '<div class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-slate-500">No matching requests are waiting for you.</div>'}
       </div>
-
-      <div class="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-5">
-        <h4 class="font-extrabold mb-2">Notifications</h4>
-        ${notifications.slice(0,4).map(n => `<div class="py-2 border-b last:border-0 border-slate-200"><p class="text-sm font-bold">${escapeHtml(n.title)}</p><p class="text-xs text-slate-600">${escapeHtml(n.body)}</p></div>`).join("") || '<p class="text-sm text-slate-500">No notifications yet.</p>'}
-      </div>`;
+      <div class="mt-7"><h4 class="font-extrabold mb-3">Active consultations</h4><div class="space-y-3">
+        ${active.length ? active.map(a => { const r=Array.isArray(a.consultation_requests)?a.consultation_requests[0]:a.consultation_requests; return `<article class="rounded-2xl border border-emerald-200 bg-emerald-50 p-5"><div class="flex items-start justify-between gap-3"><div><h4 class="font-extrabold">${escapeHtml(r?.specialties?.name || consultantProfile?.specialty || "Consultation")}</h4><p class="text-sm text-slate-600 mt-1">${escapeHtml(r?.description || "")}</p></div><span class="text-xs text-emerald-700 font-bold">Accepted</span></div><div class="mt-4 flex justify-between items-center"><span class="text-xs text-slate-500">${formatDate(r?.created_at)}</span><button data-consultation-request="${r?.id}" class="hs-consultation-open rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold">Open consultation</button></div></article>`; }).join("") : '<p class="text-sm text-slate-500">No active consultations.</p>'}
+      </div></div>
+      <div class="mt-6 rounded-2xl bg-slate-50 border border-slate-200 p-5"><h4 class="font-extrabold mb-2">Notifications</h4>${notifications.slice(0,4).map(n => `<div class="py-2 border-b last:border-0 border-slate-200"><p class="text-sm font-bold">${escapeHtml(n.title)}</p><p class="text-xs text-slate-600">${escapeHtml(n.body)}</p></div>`).join("") || '<p class="text-sm text-slate-500">No notifications yet.</p>'}</div>`;
   };
 
   const toggleAvailability = async (supabase, userId, nextValue) => {
@@ -491,10 +511,26 @@
     const refresh = async () => {
       try {
         if (session.profile.role === "patient") {
+          const requests = await fetchPatientRequests(supabase);
           body.innerHTML = await patientDashboard(supabase, session.profile);
           root.querySelector("#hs-request-care").onclick = requestForm;
+          root.querySelectorAll(".hs-open-consultation").forEach(btn => btn.onclick = async () => {
+            const request = requests.find(r => r.id === btn.dataset.openConsultation);
+            if (request) await consultationWorkspace(supabase, request, session.profile);
+          });
+          root.querySelectorAll(".hs-cancel-request").forEach(btn => btn.onclick = async () => {
+            try { await invokeCare({ action: "cancel", request_id: btn.dataset.cancelRequest }); showToast("Request cancelled.", "success"); await refresh(); }
+            catch (err) { showToast(err.message || "Could not cancel request.", "error"); }
+          });
         } else if (session.profile.role === "consultant") {
+          const activeConsultations = await fetchConsultantActive(supabase);
           body.innerHTML = await consultantDashboard(supabase, session.profile);
+          root.querySelectorAll(".hs-consultation-open").forEach(btn => btn.onclick = async () => {
+            const item = activeConsultations.find(a => a.request_id === btn.dataset.consultationRequest);
+            if (!item) return;
+            const request = Array.isArray(item.consultation_requests) ? item.consultation_requests[0] : item.consultation_requests;
+            await consultationWorkspace(supabase, { ...request, id: request.id, assignments: [{ id: item.id, request_id: item.request_id, status: "accepted" }] }, session.profile);
+          });
           root.querySelector("#hs-toggle-availability").onclick = async () => {
             try {
               const { data } = await supabase.from("consultant_profiles").select("is_available").eq("user_id", session.profile.id).single();
