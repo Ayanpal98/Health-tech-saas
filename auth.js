@@ -591,9 +591,9 @@
     const container = document.querySelector("[data-healthsync-auth]");
     if (!container) return;
     container.innerHTML = session
-      ? `<button id="hs-dashboard" class="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold hover:bg-slate-800">Dashboard</button>`
-      : `<button id="hs-login" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold hover:bg-slate-50">Sign in</button>
-         <button id="hs-signup" class="rounded-xl bg-rose-600 text-white px-4 py-2.5 text-sm font-bold hover:bg-rose-700">Get started</button>`;
+      ? `<button id="hs-dashboard" type="button" class="rounded-xl bg-slate-900 text-white px-4 py-2.5 text-sm font-bold hover:bg-slate-800">Dashboard</button>`
+      : `<button id="hs-login" type="button" class="rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold hover:bg-slate-50">Sign in</button>
+         <button id="hs-signup" type="button" class="rounded-xl bg-rose-600 text-white px-4 py-2.5 text-sm font-bold hover:bg-rose-700">Get started</button>`;
 
     container.querySelector("#hs-login")?.addEventListener("click", () => openAuth("login"));
     container.querySelector("#hs-signup")?.addEventListener("click", () => openAuth("signup"));
