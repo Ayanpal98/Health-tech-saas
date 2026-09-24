@@ -1,4 +1,7 @@
 (() => {
+  if (window.__HEALTHSYNC_AUTH_LOADED) return;
+  window.__HEALTHSYNC_AUTH_LOADED = true;
+
   let realtimeChannels = [];
 
   const loadSupabase = async () => {
